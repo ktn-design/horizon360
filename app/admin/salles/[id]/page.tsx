@@ -1,0 +1,309 @@
+"use client";
+
+import { use, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getSalleParId, sauvegarderSalle, supprimerSalle } from "@/lib/store";
+import { uploaderPhoto } from "@/lib/imageUtils";
+import SelectPays from "@/components/SelectPays";
+import { Salle, TypeEvenement } from "@/types";
+
+const evenementsListe: { valeur: TypeEvenement; label: string }[] = [
+  { valeur: "mariage", label: "Mariage" },
+  { valeur: "anniversaire", label: "Anniversaire" },
+  { valeur: "bal", label: "Bal" },
+  { valeur: "deuil", label: "Deuil" },
+  { valeur: "fete", label: "Fete" },
+  { valeur: "conference", label: "Conference" },
+  { valeur: "polyvalente", label: "Polyvalente (accepte tous evenements)" },
+];
+
+export default function ModifierSallePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const router = useRouter();
+  const [charge, setCharge] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [evenements, setEvenements] = useState<TypeEvenement[]>([]);
+  const [enCours, setEnCours] = useState(false);
+  const [salleExistante, setSalleExistante] = useState<Salle | null>(null);
+
+  const [form, setForm] = useState({
+    titre: "",
+    description: "",
+    prix: 0,
+    statut: "disponible" as Salle["statut"],
+    pays: "",
+    province: "",
+    ville: "",
+    quartier: "",
+    capacite: 50,
+    superficie: 0,
+    parking: false,
+    climatisation: false,
+    sonorisation: false,
+    eclairageEvenementiel: false,
+    cuisine: false,
+    wifi: false,
+    visiteVirtuelle: false,
+    whatsapp: "",
+    telephone: "",
+  });
+
+  useEffect(() => {
+    async function charger() {
+      const connecte = localStorage.getItem("admin_connecte");
+      if (connecte !== "true") {
+        router.push("/admin");
+        return;
+      }
+      const salle = await getSalleParId(id);
+      if (salle) {
+        setSalleExistante(salle);
+        setForm({
+          titre: salle.titre,
+          description: salle.description,
+          prix: salle.prix,
+          statut: salle.statut,
+          pays: salle.localisation.pays,
+          province: salle.localisation.province,
+          ville: salle.localisation.ville,
+          quartier: salle.localisation.quartier || "",
+          capacite: salle.capacite,
+          superficie: salle.superficie,
+          parking: salle.parking,
+          climatisation: salle.climatisation,
+          sonorisation: salle.sonorisation,
+          eclairageEvenementiel: salle.eclairageEvenementiel,
+          cuisine: salle.cuisine,
+          wifi: salle.wifi,
+          visiteVirtuelle: salle.visiteVirtuelle,
+          whatsapp: salle.contact.whatsapp,
+          telephone: salle.contact.telephone,
+        });
+        setPhotos(salle.photos || []);
+        setEvenements(salle.evenementsAcceptes || []);
+      }
+      setCharge(true);
+    }
+    charger();
+  }, [id, router]);
+
+  function champ(nom: string, valeur: any) {
+    setForm((prev) => ({ ...prev, [nom]: valeur }));
+  }
+
+  function toggleEvenement(ev: TypeEvenement) {
+    setEvenements((prev) =>
+      prev.includes(ev) ? prev.filter((e) => e !== ev) : [...prev, ev]
+    );
+  }
+
+  async function handlePhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const fichiers = e.target.files;
+    if (!fichiers) return;
+    setEnCours(true);
+    const nouvelles: string[] = [];
+    for (let i = 0; i < fichiers.length; i++) {
+      try {
+        const url = await uploaderPhoto(fichiers[i]);
+        nouvelles.push(url);
+      } catch (err) {
+        alert("Erreur lors de l'envoi d'une photo.");
+      }
+    }
+    setPhotos((prev) => [...prev, ...nouvelles]);
+    setEnCours(false);
+  }
+
+  function supprimerPhoto(index: number) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    const salleMaj: Salle = {
+      id,
+      titre: form.titre,
+      description: form.description,
+      prix: Number(form.prix),
+      statut: form.statut,
+      localisation: {
+        pays: form.pays,
+        province: form.province,
+        ville: form.ville,
+        quartier: form.quartier || undefined,
+      },
+      capacite: Number(form.capacite),
+      superficie: Number(form.superficie),
+      evenementsAcceptes: evenements,
+      parking: form.parking,
+      climatisation: form.climatisation,
+      sonorisation: form.sonorisation,
+      eclairageEvenementiel: form.eclairageEvenementiel,
+      cuisine: form.cuisine,
+      wifi: form.wifi,
+      visiteVirtuelle: form.visiteVirtuelle,
+      photos: photos,
+      panorama360Url: salleExistante?.panorama360Url,
+      panoramas: salleExistante?.panoramas,
+      contact: {
+        whatsapp: form.whatsapp,
+        telephone: form.telephone,
+      },
+    };
+
+    try {
+      await sauvegarderSalle(salleMaj);
+      router.push("/admin/dashboard");
+    } catch (err) {
+      alert("Erreur lors de l'enregistrement.");
+    }
+  }
+
+  async function handleSupprimer() {
+    if (confirm("Supprimer cette salle definitivement ?")) {
+      await supprimerSalle(id);
+      router.push("/admin/dashboard");
+    }
+  }
+
+  if (!charge) return <main className="min-h-screen bg-slate-900 px-4 py-10 text-white">Chargement...</main>;
+
+  return (
+    <main className="min-h-screen bg-slate-900 px-4 py-10 text-white">
+      <h1 className="mb-8 text-3xl font-bold">Modifier la salle</h1>
+
+      <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
+        <Champ label="Titre">
+          <input required value={form.titre} onChange={(e) => champ("titre", e.target.value)} className="input" />
+        </Champ>
+
+        <Champ label="Description">
+          <textarea required value={form.description} onChange={(e) => champ("description", e.target.value)} className="input min-h-24" />
+        </Champ>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Champ label="Prix">
+            <input required type="number" value={form.prix} onChange={(e) => champ("prix", e.target.value)} className="input" />
+          </Champ>
+          <Champ label="Capacite (personnes)">
+            <input required type="number" value={form.capacite} onChange={(e) => champ("capacite", e.target.value)} className="input" />
+          </Champ>
+        </div>
+
+        <Champ label="Statut">
+          <select value={form.statut} onChange={(e) => champ("statut", e.target.value)} className="input">
+            <option value="disponible">Disponible</option>
+            <option value="loue">Loue</option>
+            <option value="vendu">Vendu</option>
+            <option value="indisponible">Indisponible</option>
+          </select>
+        </Champ>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Champ label="Pays">
+            <SelectPays value={form.pays} onChange={(v) => champ("pays", v)} className="input" />
+          </Champ>
+          <Champ label="Province/Etat">
+            <input required value={form.province} onChange={(e) => champ("province", e.target.value)} className="input" />
+          </Champ>
+          <Champ label="Ville">
+            <input required value={form.ville} onChange={(e) => champ("ville", e.target.value)} className="input" />
+          </Champ>
+        </div>
+
+        <Champ label="Quartier (optionnel)">
+          <input value={form.quartier} onChange={(e) => champ("quartier", e.target.value)} className="input" />
+        </Champ>
+
+        <Champ label="Superficie (m2)">
+          <input type="number" value={form.superficie} onChange={(e) => champ("superficie", e.target.value)} className="input" />
+        </Champ>
+
+        <div>
+          <label className="mb-2 block text-sm text-slate-300">Evenements acceptes</label>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {evenementsListe.map((ev) => (
+              <label key={ev.valeur} className="flex items-center gap-2 rounded-lg bg-slate-800 p-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={evenements.includes(ev.valeur)}
+                  onChange={() => toggleEvenement(ev.valeur)}
+                />
+                {ev.label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <Case label="Parking" checked={form.parking} onChange={(v) => champ("parking", v)} />
+          <Case label="Climatisation" checked={form.climatisation} onChange={(v) => champ("climatisation", v)} />
+          <Case label="Sonorisation" checked={form.sonorisation} onChange={(v) => champ("sonorisation", v)} />
+          <Case label="Eclairage evenementiel" checked={form.eclairageEvenementiel} onChange={(v) => champ("eclairageEvenementiel", v)} />
+          <Case label="Cuisine" checked={form.cuisine} onChange={(v) => champ("cuisine", v)} />
+          <Case label="Wifi" checked={form.wifi} onChange={(v) => champ("wifi", v)} />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm text-slate-300">Photos</label>
+          <input type="file" accept="image/*" multiple onChange={handlePhotos} className="input" />
+          {enCours && <p className="mt-2 text-sm text-blue-400">Envoi des photos en cours...</p>}
+
+          {photos.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-3">
+              {photos.map((photo, i) => (
+                <div key={i} className="relative">
+                  <img src={photo} alt="" className="h-24 w-24 rounded-lg object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => supprimerPhoto(i)}
+                    className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold"
+                  >
+                    X
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Champ label="WhatsApp (avec indicatif, sans +)">
+            <input required value={form.whatsapp} onChange={(e) => champ("whatsapp", e.target.value)} className="input" />
+          </Champ>
+          <Champ label="Telephone">
+            <input required value={form.telephone} onChange={(e) => champ("telephone", e.target.value)} className="input" />
+          </Champ>
+        </div>
+
+        <div className="flex gap-4">
+          <button type="submit" className="rounded-lg bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-700">
+            Enregistrer les modifications
+          </button>
+          <button type="button" onClick={handleSupprimer} className="rounded-lg bg-red-600 px-6 py-3 font-semibold hover:bg-red-700">
+            Supprimer
+          </button>
+        </div>
+      </form>
+    </main>
+  );
+}
+
+function Champ({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1 block text-sm text-slate-300">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function Case({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center gap-2 rounded-lg bg-slate-800 p-3 text-sm">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      {label}
+    </label>
+  );
+}

@@ -1,0 +1,153 @@
+export type StatutBien = "disponible" | "loue" | "vendu" | "indisponible";
+export type TypeTransaction = "vente" | "location" | "location_courte_duree";
+export type TypeEvenement = "mariage" | "anniversaire" | "bal" | "deuil" | "fete" | "conference" | "polyvalente";
+
+export interface Localisation {
+  pays: string;
+  province: string;
+  ville: string;
+  quartier?: string;
+}
+
+export interface Hotspot360 {
+  id: string;
+  yaw: number;
+  pitch: number;
+  label: string;
+  panoramaCible: string;
+}
+
+export interface Panorama360 {
+  id: string;
+  nom: string;
+  url: string;
+  hotspots: Hotspot360[];
+}
+
+export interface Maison {
+  id: string;
+  titre: string;
+  description: string;
+  prix: number;
+  transaction: TypeTransaction;
+  statut: StatutBien;
+  localisation: Localisation;
+  chambres: number;
+  sallesDeBain: number;
+  superficie: number;
+  parking: boolean;
+  piscine: boolean;
+  jardin: boolean;
+  meublee: boolean;
+  climatisation: boolean;
+  internet: boolean;
+  visiteVirtuelle: boolean;
+  immeubleId?: string;
+  photos: string[];
+  panorama360Url?: string;
+  panoramas?: Panorama360[];
+  contact: {
+    whatsapp: string;
+    telephone: string;
+  };
+}
+
+export interface Hotel {
+  id: string;
+  titre: string;
+  description: string;
+  prixParNuit: number;
+  statut: StatutBien;
+  localisation: Localisation;
+  etoiles: number;
+  wifi: boolean;
+  parking: boolean;
+  piscine: boolean;
+  salleDeSport: boolean;
+  restaurant: boolean;
+  petitDejeunerInclus: boolean;
+  climatisation: boolean;
+  visiteVirtuelle: boolean;
+  photos: string[];
+  panorama360Url?: string;
+  panoramas?: Panorama360[];
+  contact: {
+    whatsapp: string;
+    telephone: string;
+  };
+}
+
+export interface Salle {
+  id: string;
+  titre: string;
+  description: string;
+  prix: number;
+  statut: StatutBien;
+  localisation: Localisation;
+  capacite: number;
+  superficie: number;
+  evenementsAcceptes: TypeEvenement[];
+  parking: boolean;
+  climatisation: boolean;
+  sonorisation: boolean;
+  eclairageEvenementiel: boolean;
+  cuisine: boolean;
+  wifi: boolean;
+  visiteVirtuelle: boolean;
+  photos: string[];
+  panorama360Url?: string;
+  panoramas?: Panorama360[];
+  contact: {
+    whatsapp: string;
+    telephone: string;
+  };
+}
+
+export interface ParametresSite {
+  nomSite: string;
+  description: string;
+  email: string;
+  telephone: string;
+  whatsapp: string;
+  adresse: string;
+  texteAPropos: string;
+  imageAccueilUrl: string;
+  imagesDiaporama: string[];
+  imageMaisonsUrl: string;
+  imageHotelsUrl: string;
+  imageSallesUrl: string;
+  couleurBoutonMaisons: string;
+  couleurBoutonHotels: string;
+  couleurBoutonSalles: string;
+}
+
+export interface Societe {
+  id: string;
+  nom: string;
+  description: string;
+  logoUrl: string;
+  whatsapp: string;
+  telephone: string;
+}
+
+export interface Immeuble {
+  id: string;
+  societeId: string;
+  nom: string;
+  description: string;
+  localisation: Localisation;
+  photos: string[];
+}
+
+export interface Chambre {
+  id: string;
+  hotelId: string;
+  nom: string;
+  description: string;
+  prixParNuit: number;
+  capacite: number;
+  statut: StatutBien;
+  photos: string[];
+  panorama360Url?: string;
+  visiteVirtuelle: boolean;
+}

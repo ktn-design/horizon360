@@ -1,0 +1,93 @@
+// src/data/mockData.ts
+import { Maison, Hotel } from "@/types";
+
+export const maisons: Maison[] = [
+  {
+    id: "1",
+    titre: "Villa moderne avec piscine",
+    description: "Magnifique villa de 4 chambres avec vue dégagée, idéale pour une famille.",
+    prix: 250000,
+    transaction: "vente",
+    statut: "disponible",
+    localisation: {
+      pays: "Canada",
+      province: "Québec",
+      ville: "Montréal",
+      quartier: "Plateau Mont-Royal",
+    },
+    chambres: 4,
+    sallesDeBain: 2,
+    superficie: 220,
+    parking: true,
+    piscine: true,
+    jardin: true,
+    meublee: false,
+    climatisation: true,
+    internet: true,
+    visiteVirtuelle: true,
+    photos: ["/images/maison1-1.jpg", "/images/maison1-2.jpg"],
+    panorama360Url: "/panoramas/maison1-salon.jpg",
+    contact: {
+      whatsapp: "15145550123",
+      telephone: "+15145550123",
+    },
+  },
+  {
+    id: "2",
+    titre: "Appartement meublé centre-ville",
+    description: "Appartement 2 chambres, entièrement meublé, proche des transports.",
+    prix: 1500,
+    transaction: "location",
+    statut: "disponible",
+    localisation: {
+      pays: "Canada",
+      province: "Québec",
+      ville: "Québec",
+    },
+    chambres: 2,
+    sallesDeBain: 1,
+    superficie: 85,
+    parking: false,
+    piscine: false,
+    jardin: false,
+    meublee: true,
+    climatisation: true,
+    internet: true,
+    visiteVirtuelle: false,
+    photos: ["/images/maison2-1.jpg"],
+    contact: {
+      whatsapp: "14185550456",
+      telephone: "+14185550456",
+    },
+  },
+];
+
+export const hotels: Hotel[] = [
+  {
+    id: "1",
+    titre: "Hôtel Horizon Palace",
+    description: "Hôtel 4 étoiles au cœur de la ville, avec spa et restaurant gastronomique.",
+    prixParNuit: 180,
+    statut: "disponible",
+    localisation: {
+      pays: "Canada",
+      province: "Québec",
+      ville: "Montréal",
+    },
+    etoiles: 4,
+    wifi: true,
+    parking: true,
+    piscine: true,
+    salleDeSport: true,
+    restaurant: true,
+    petitDejeunerInclus: true,
+    climatisation: true,
+    visiteVirtuelle: true,
+    photos: ["/images/hotel1-1.jpg"],
+    panorama360Url: "/panoramas/hotel1-lobby.jpg",
+    contact: {
+      whatsapp: "15145559876",
+      telephone: "+15145559876",
+    },
+  },
+];
