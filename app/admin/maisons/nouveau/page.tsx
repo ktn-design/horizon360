@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { sauvegarderMaison, getImmeubles } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
@@ -15,17 +15,12 @@ export default function NouvelleMaisonPage() {
   const [immeubles, setImmeubles] = useState<Immeuble[]>([]);
 
   useEffect(() => {
-    async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
+    async function chargerImmeubles() {
       const im = await getImmeubles();
       setImmeubles(im);
     }
-    charger();
-  }, [router]);
+    chargerImmeubles();
+  }, []);
 
   const [form, setForm] = useState({
     titre: "",
