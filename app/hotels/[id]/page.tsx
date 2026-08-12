@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { Hotel } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import ReservationHotel from "@/components/ReservationHotel";
+import AssistantDeco from "@/components/AssistantDeco";
 
 export default function HotelDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -26,6 +27,8 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
 
   if (charge && !hotel) return notFound();
   if (!charge || !hotel) return <main className="min-h-screen bg-slate-900 px-4 py-10 text-white">{t("chargement")}</main>;
+
+  const contexteIA = hotel.titre + ", hotel " + hotel.etoiles + " etoiles, " + hotel.description;
 
   return (
     <main className="min-h-screen bg-slate-900 px-4 py-10 text-white">
@@ -108,6 +111,8 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
           </Link>
         </div>
       </div>
+
+      <AssistantDeco contexte={contexteIA} />
     </main>
   );
 }

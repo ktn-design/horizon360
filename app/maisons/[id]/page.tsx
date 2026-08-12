@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Maison } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
+import AssistantDeco from "@/components/AssistantDeco";
 
 export default function MaisonDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -25,6 +26,8 @@ export default function MaisonDetailPage({ params }: { params: Promise<{ id: str
 
   if (charge && !maison) return notFound();
   if (!charge || !maison) return <main className="min-h-screen bg-slate-900 px-4 py-10 text-white">{t("chargement")}</main>;
+
+  const contexteIA = maison.titre + ", " + maison.chambres + " chambres, " + maison.superficie + " m2, " + maison.description;
 
   return (
     <main className="min-h-screen bg-slate-900 px-4 py-10 text-white">
@@ -104,6 +107,8 @@ export default function MaisonDetailPage({ params }: { params: Promise<{ id: str
           </Link>
         </div>
       </div>
+
+      <AssistantDeco contexte={contexteIA} />
     </main>
   );
 }

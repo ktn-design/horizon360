@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { Salle } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import ReservationSalle from "@/components/ReservationSalle";
+import AssistantDeco from "@/components/AssistantDeco";
 
 const labelsEvenements: Record<string, string> = {
   mariage: "Mariage",
@@ -36,6 +37,8 @@ export default function SalleDetailPage({ params }: { params: Promise<{ id: stri
 
   if (charge && !salle) return notFound();
   if (!charge || !salle) return <main className="min-h-screen bg-slate-900 px-4 py-10 text-white">{t("chargement")}</main>;
+
+  const contexteIA = salle.titre + ", capacite " + salle.capacite + " personnes, " + salle.superficie + " m2, " + salle.description;
 
   return (
     <main className="min-h-screen bg-slate-900 px-4 py-10 text-white">
@@ -126,6 +129,8 @@ export default function SalleDetailPage({ params }: { params: Promise<{ id: stri
           </Link>
         </div>
       </div>
+
+      <AssistantDeco contexte={contexteIA} />
     </main>
   );
 }
