@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { Maison, Hotel, Salle, ParametresSite, Societe, Immeuble } from "@/types";
+import { Maison, Hotel, Salle, ParametresSite, Societe, Immeuble, Panorama360 } from "@/types";
 
 function maisonVersDb(m: Maison) {
   return {
@@ -476,4 +476,71 @@ export async function changerStatutReservation(id: string, statut: "confirmee" |
 
 export async function supprimerReservation(id: string) {
   await supabase.from("reservations").delete().eq("id", id);
+}
+
+export interface ChambreHotel {
+  id: string;
+  hotelId: string;
+  nom: string;
+  description: string;
+  prixParNuit: number;
+  capacite: number;
+  statut: "disponible" | "loue" | "vendu" | "indisponible";
+  photos: string[];
+  panorama360Url?: string;
+  panoramas?: Panorama360[];
+  visiteVirtuelle: boolean;
+}
+
+function chambreVersDb(c: ChambreHotel) {
+  return {
+    id: c.id,
+    hotel_id: c.hotelId,
+    nom: c.nom,
+    description: c.description,
+    prix_par_nuit: c.prixParNuit,
+    capacite: c.capacite,
+    statut: c.statut,
+    photos: c.photos,
+    panorama_360_url: c.panorama360Url || null,
+    panoramas: c.panoramas || [],
+    visite_virtuelle: c.visiteVirtuelle,
+  };
+}
+
+function dbVersChambre(d: any): ChambreHotel {
+  return {
+    id: d.id,
+    hotelId: d.hotel_id,
+    nom: d.nom,
+    description: d.description,
+    prixParNuit: Number(d.prix_par_nuit),
+    capacite: d.capacite,
+    statut: d.statut,
+    photos: d.photos || [],
+    panorama360Url: d.panorama_360_url || undefined,
+    panoramas: d.panoramas || [],
+    visiteVirtuelle: d.visite_virtuelle,
+  };
+}
+
+export async function getChambresParHotel(hotelId: string): Promise<ChambreHotel[]> {
+  const { data, error } = await supabase.from("chambres").select("*").eq("hotel_id", hotelId).order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return data.map(dbVersChambre);
+}
+
+export async function getChambreParId(id: string): Promise<ChambreHotel | undefined> {
+  const { data, error } = await supabase.from("chambres").select("*").eq("id", id).single();
+  if (error || !data) return undefined;
+  return dbVersChambre(data);
+}
+
+export async function sauvegarderChambre(chambre: ChambreHotel) {
+  const { error } = await supabase.from("chambres").upsert(chambreVersDb(chambre));
+  if (error) throw new Error(error.message);
+}
+
+export async function supprimerChambre(id: string) {
+  await supabase.from("chambres").delete().eq("id", id);
 }

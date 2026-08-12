@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { getHotelParId } from "@/lib/store";
+import { getHotelParId, getChambresParHotel, ChambreHotel } from "@/lib/store";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Hotel } from "@/types";
@@ -13,6 +13,7 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const { t } = useLanguage();
   const [hotel, setHotel] = useState<Hotel | null>(null);
+  const [chambres, setChambres] = useState<ChambreHotel[]>([]);
   const [photoActive, setPhotoActive] = useState(0);
   const [charge, setCharge] = useState(false);
 
@@ -20,6 +21,8 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
     async function charger() {
       const h = await getHotelParId(id);
       setHotel(h || null);
+      const c = await getChambresParHotel(id);
+      setChambres(c);
       setCharge(true);
     }
     charger();
@@ -90,6 +93,29 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
             {hotel.petitDejeunerInclus && <Badge label={t("hotels_petit_dej")} />}
             {hotel.climatisation && <Badge label={t("fiche_climatisation")} />}
           </div>
+
+          {chambres.length > 0 && (
+            <div className="mt-10">
+              <h2 className="mb-4 text-xl font-semibold">Chambres disponibles ({chambres.length})</h2>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {chambres.map((chambre) => (
+                  <div key={chambre.id} className="rounded-xl bg-slate-800 p-4">
+                    {chambre.photos.length > 0 && (
+                      <img src={chambre.photos[0]} alt="" className="mb-3 h-32 w-full rounded-lg object-cover" />
+                    )}
+                    <h3 className="font-semibold">{chambre.nom}</h3>
+                    <p className="text-sm text-slate-400">{chambre.capacite} personnes</p>
+                    <p className="mt-1 font-bold text-emerald-400">{chambre.prixParNuit.toLocaleString("fr-CA")} $/nuit</p>
+                    {chambre.visiteVirtuelle && (
+                      <Link href={"/hotels/" + hotel.id + "/chambres/" + chambre.id + "/visite"} className="mt-2 block rounded-lg bg-blue-600 py-2 text-center text-xs font-semibold hover:bg-blue-700">
+                        Visite virtuelle
+                      </Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="mt-8">
             <ReservationHotel hotelId={hotel.id} />

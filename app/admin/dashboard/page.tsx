@@ -109,6 +109,9 @@ export default function DashboardPage() {
               <Link href={"/admin/hotels/" + hotel.id + "/visite360"} className="rounded-lg bg-emerald-600 px-3 py-2 text-sm hover:bg-emerald-700">
                 Visite 360
               </Link>
+              <Link href={"/admin/hotels/" + hotel.id + "/chambres"} className="rounded-lg bg-purple-600 px-3 py-2 text-sm hover:bg-purple-700">
+                Chambres
+              </Link>
             </div>
           </div>
         ))}
