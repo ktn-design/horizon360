@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const { destinataire, sujet, contenu } = body;
 
     await resend.emails.send({
-      from: "Horizon 360 <onboarding@resend.dev>",
+      from: "Horizon 360 <contact@hrz360.com>",
       to: destinataire,
       subject: sujet,
       html: contenu,
