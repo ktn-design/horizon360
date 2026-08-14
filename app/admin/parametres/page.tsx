@@ -22,8 +22,11 @@ export default function ParametresPage() {
     imageAccueilUrl: "",
     imagesDiaporama: [],
     imageMaisonsUrl: "",
+    imagesDiaporamaMaisons: [],
     imageHotelsUrl: "",
+    imagesDiaporamaHotels: [],
     imageSallesUrl: "",
+    imagesDiaporamaSalles: [],
     couleurBoutonMaisons: "#2563eb",
     couleurBoutonHotels: "#2563eb",
     couleurBoutonSalles: "#2563eb",
@@ -61,7 +64,7 @@ export default function ParametresPage() {
     setEnCours(false);
   }
 
-  async function handleDiaporama(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleDiaporama(nomChampDiaporama: keyof ParametresSite, e: React.ChangeEvent<HTMLInputElement>) {
     const fichiers = e.target.files;
     if (!fichiers) return;
     setEnCours(true);
@@ -74,13 +77,19 @@ export default function ParametresPage() {
         alert("Erreur lors de l'envoi d'une image.");
       }
     }
-    setForm((prev) => ({ ...prev, imagesDiaporama: [...prev.imagesDiaporama, ...nouvelles] }));
+    setForm((prev) => ({
+      ...prev,
+      [nomChampDiaporama]: [...(prev[nomChampDiaporama] as string[]), ...nouvelles],
+    }));
     setEnregistre(false);
     setEnCours(false);
   }
 
-  function supprimerImageDiaporama(index: number) {
-    setForm((prev) => ({ ...prev, imagesDiaporama: prev.imagesDiaporama.filter((_, i) => i !== index) }));
+  function supprimerImageDiaporama(nomChampDiaporama: keyof ParametresSite, index: number) {
+    setForm((prev) => ({
+      ...prev,
+      [nomChampDiaporama]: (prev[nomChampDiaporama] as string[]).filter((_, i) => i !== index),
+    }));
     setEnregistre(false);
   }
 
@@ -145,25 +154,17 @@ export default function ParametresPage() {
         </div>
 
         <div className="space-y-5 border-t border-slate-700 pt-6">
-          <h2 className="text-xl font-semibold text-blue-400">Diaporama publicitaire de l'accueil</h2>
-
+          <h2 className="text-xl font-semibold text-blue-400">Diaporama de l'accueil</h2>
           <div>
-            <label className="mb-2 block text-sm text-slate-300">Ajouter des images au diaporama</label>
-            <input type="file" accept="image/*" multiple onChange={handleDiaporama} className="input" />
+            <label className="mb-2 block text-sm text-slate-300">Ajouter des images</label>
+            <input type="file" accept="image/*" multiple onChange={(e) => handleDiaporama("imagesDiaporama", e)} className="input" />
           </div>
-
           {form.imagesDiaporama.length > 0 && (
             <div className="flex flex-wrap gap-3">
               {form.imagesDiaporama.map((img, i) => (
                 <div key={i} className="relative">
                   <img src={img} alt="" className="h-24 w-24 rounded-lg object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => supprimerImageDiaporama(i)}
-                    className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold"
-                  >
-                    X
-                  </button>
+                  <button type="button" onClick={() => supprimerImageDiaporama("imagesDiaporama", i)} className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold">X</button>
                 </div>
               ))}
             </div>
@@ -181,6 +182,20 @@ export default function ParametresPage() {
             <label className="mb-1 block text-sm text-slate-300">Couleur du bouton Maisons</label>
             <input type="color" value={form.couleurBoutonMaisons} onChange={(e) => champ("couleurBoutonMaisons", e.target.value)} className="h-12 w-24 rounded-lg" />
           </div>
+          <div>
+            <label className="mb-2 block text-sm text-slate-300">Diaporama de fond page Maisons</label>
+            <input type="file" accept="image/*" multiple onChange={(e) => handleDiaporama("imagesDiaporamaMaisons", e)} className="input" />
+          </div>
+          {form.imagesDiaporamaMaisons.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {form.imagesDiaporamaMaisons.map((img, i) => (
+                <div key={i} className="relative">
+                  <img src={img} alt="" className="h-24 w-24 rounded-lg object-cover" />
+                  <button type="button" onClick={() => supprimerImageDiaporama("imagesDiaporamaMaisons", i)} className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold">X</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-5 border-t border-slate-700 pt-6">
@@ -194,6 +209,20 @@ export default function ParametresPage() {
             <label className="mb-1 block text-sm text-slate-300">Couleur du bouton Hotels</label>
             <input type="color" value={form.couleurBoutonHotels} onChange={(e) => champ("couleurBoutonHotels", e.target.value)} className="h-12 w-24 rounded-lg" />
           </div>
+          <div>
+            <label className="mb-2 block text-sm text-slate-300">Diaporama de fond page Hotels</label>
+            <input type="file" accept="image/*" multiple onChange={(e) => handleDiaporama("imagesDiaporamaHotels", e)} className="input" />
+          </div>
+          {form.imagesDiaporamaHotels.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {form.imagesDiaporamaHotels.map((img, i) => (
+                <div key={i} className="relative">
+                  <img src={img} alt="" className="h-24 w-24 rounded-lg object-cover" />
+                  <button type="button" onClick={() => supprimerImageDiaporama("imagesDiaporamaHotels", i)} className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold">X</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-5 border-t border-slate-700 pt-6">
@@ -207,6 +236,20 @@ export default function ParametresPage() {
             <label className="mb-1 block text-sm text-slate-300">Couleur du bouton Salles</label>
             <input type="color" value={form.couleurBoutonSalles} onChange={(e) => champ("couleurBoutonSalles", e.target.value)} className="h-12 w-24 rounded-lg" />
           </div>
+          <div>
+            <label className="mb-2 block text-sm text-slate-300">Diaporama de fond page Salles</label>
+            <input type="file" accept="image/*" multiple onChange={(e) => handleDiaporama("imagesDiaporamaSalles", e)} className="input" />
+          </div>
+          {form.imagesDiaporamaSalles.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {form.imagesDiaporamaSalles.map((img, i) => (
+                <div key={i} className="relative">
+                  <img src={img} alt="" className="h-24 w-24 rounded-lg object-cover" />
+                  <button type="button" onClick={() => supprimerImageDiaporama("imagesDiaporamaSalles", i)} className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold">X</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <button type="submit" className="rounded-lg bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-700">

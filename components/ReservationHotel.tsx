@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { creerReservation, getReservationsParBien, Reservation } from "@/lib/store";
 import { useAuth } from "@/lib/AuthContext";
+import { useLanguage } from "@/lib/LanguageContext";
 import ModalConnexion from "./ModalConnexion";
 
 interface ReservationHotelProps {
@@ -11,6 +12,7 @@ interface ReservationHotelProps {
 
 export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [afficherConnexion, setAfficherConnexion] = useState(false);
   const [dateArrivee, setDateArrivee] = useState("");
   const [dateDepart, setDateDepart] = useState("");
@@ -51,11 +53,11 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
     }
 
     if (!dateArrivee || !dateDepart) {
-      setErreur("Choisis les dates d'arrivee et de depart.");
+      setErreur(t("resa_choisir_dates"));
       return;
     }
     if (dateDepart <= dateArrivee) {
-      setErreur("La date de depart doit etre apres la date d'arrivee.");
+      setErreur(t("resa_depart_apres_arrivee"));
       return;
     }
 
@@ -64,7 +66,7 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
     );
 
     if (conflit) {
-      setErreur("Ces dates ne sont pas disponibles, choisis une autre periode.");
+      setErreur(t("resa_dates_indisponibles"));
       return;
     }
 
@@ -82,7 +84,7 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
       });
       setEnvoye(true);
     } catch (err) {
-      setErreur("Une erreur est survenue, reessaie.");
+      setErreur(t("resa_erreur"));
     }
     setEnCours(false);
   }
@@ -90,26 +92,26 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
   if (envoye) {
     return (
       <div className="rounded-xl bg-slate-800 p-6">
-        <p className="text-lg font-semibold text-emerald-400">Demande de reservation envoyee.</p>
-        <p className="mt-2 text-slate-300">Nous vous contacterons pour confirmer.</p>
+        <p className="text-lg font-semibold text-emerald-400">{t("resa_envoyee_titre")}</p>
+        <p className="mt-2 text-slate-300">{t("resa_envoyee_texte")}</p>
       </div>
     );
   }
 
   return (
     <div className="rounded-xl bg-slate-800 p-6">
-      <h3 className="mb-4 text-lg font-semibold">Reserver</h3>
+      <h3 className="mb-4 text-lg font-semibold">{t("resa_titre_hotel")}</h3>
 
       {!user && (
         <p className="mb-4 rounded-lg bg-slate-700 p-3 text-sm text-slate-300">
-          Tu dois etre connecte pour reserver. Remplis le formulaire, la connexion te sera demandee a l'envoi.
+          {t("resa_connexion_requise")}
         </p>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-sm text-slate-300">Arrivee</label>
+            <label className="mb-1 block text-sm text-slate-300">{t("resa_arrivee")}</label>
             <input
               required
               type="date"
@@ -120,7 +122,7 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-slate-300">Depart</label>
+            <label className="mb-1 block text-sm text-slate-300">{t("resa_depart")}</label>
             <input
               required
               type="date"
@@ -133,29 +135,29 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm text-slate-300">Nom complet</label>
+          <label className="mb-1 block text-sm text-slate-300">{t("resa_nom_complet")}</label>
           <input required value={nom} onChange={(e) => setNom(e.target.value)} className="input" />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm text-slate-300">Email</label>
+          <label className="mb-1 block text-sm text-slate-300">{t("resa_email")}</label>
           <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm text-slate-300">Telephone</label>
+          <label className="mb-1 block text-sm text-slate-300">{t("resa_telephone")}</label>
           <input required value={telephone} onChange={(e) => setTelephone(e.target.value)} className="input" />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm text-slate-300">Message (optionnel)</label>
+          <label className="mb-1 block text-sm text-slate-300">{t("resa_message_optionnel")}</label>
           <textarea value={message} onChange={(e) => setMessage(e.target.value)} className="input min-h-20" />
         </div>
 
         {erreur && <p className="text-sm text-red-400">{erreur}</p>}
 
         <button type="submit" disabled={enCours} className="w-full rounded-lg bg-blue-600 py-3 font-semibold hover:bg-blue-700 disabled:opacity-50">
-          {enCours ? "Envoi..." : user ? "Demander la reservation" : "Se connecter pour reserver"}
+          {enCours ? t("resa_envoi") : user ? t("resa_demander") : t("resa_titre_hotel")}
         </button>
       </form>
 

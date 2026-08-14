@@ -4,24 +4,25 @@ import { use, useEffect, useState } from "react";
 import { getSalleParId } from "@/lib/store";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Salle } from "@/types";
+import { Salle, TypeEvenement } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import ReservationSalle from "@/components/ReservationSalle";
 import AssistantDeco from "@/components/AssistantDeco";
 
-const labelsEvenements: Record<string, string> = {
-  mariage: "Mariage",
-  anniversaire: "Anniversaire",
-  bal: "Bal",
-  deuil: "Deuil",
-  fete: "Fete",
-  conference: "Conference",
-  polyvalente: "Polyvalente (tous evenements)",
-};
-
 export default function SalleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { t } = useLanguage();
+
+  const labelsEvenements: Record<string, string> = {
+    mariage: t("evenement_mariage"),
+    anniversaire: t("evenement_anniversaire"),
+    bal: t("evenement_bal"),
+    deuil: t("evenement_deuil"),
+    fete: t("evenement_fete"),
+    conference: t("evenement_conference"),
+    polyvalente: t("evenement_polyvalente"),
+  };
+
   const [salle, setSalle] = useState<Salle | null>(null);
   const [photoActive, setPhotoActive] = useState(0);
   const [charge, setCharge] = useState(false);

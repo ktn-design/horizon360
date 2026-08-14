@@ -5,8 +5,10 @@ import Link from "next/link";
 import { getParametres } from "@/lib/store";
 import { ParametresSite } from "@/types";
 import Diaporama from "@/components/Diaporama";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function Home() {
+  const { t } = useLanguage();
   const [parametres, setParametres] = useState<ParametresSite | null>(null);
   const [charge, setCharge] = useState(false);
 
@@ -53,7 +55,7 @@ export default function Home() {
       }
     : { backgroundColor: parametres?.couleurBoutonSalles || "#1e293b" };
 
-  if (!charge) return <main className="flex min-h-screen items-center justify-center bg-slate-900 text-white">Chargement...</main>;
+  if (!charge) return <main className="flex min-h-screen items-center justify-center bg-slate-900 text-white">{t("chargement")}</main>;
 
   return (
     <main
@@ -67,7 +69,7 @@ export default function Home() {
           {parametres?.nomSite || "Horizon 360"}
         </h1>
         <p className="mb-12 text-center text-lg text-slate-300">
-          {parametres?.description || "Visitez des biens a distance, en immersion totale."}
+          {parametres?.description || t("accueil_titre")}
         </p>
 
         <div className="flex flex-col gap-6 sm:flex-row">
@@ -76,7 +78,7 @@ export default function Home() {
             style={styleCarteMaisons}
             className="flex h-48 w-64 flex-col items-center justify-center rounded-2xl p-8 shadow-xl transition hover:scale-105"
           >
-            <span className="text-2xl font-bold text-white drop-shadow-lg">Maisons</span>
+            <span className="text-2xl font-bold text-white drop-shadow-lg">{t("accueil_maisons")}</span>
           </Link>
 
           <Link
@@ -84,7 +86,7 @@ export default function Home() {
             style={styleCarteHotels}
             className="flex h-48 w-64 flex-col items-center justify-center rounded-2xl p-8 shadow-xl transition hover:scale-105"
           >
-            <span className="text-2xl font-bold text-white drop-shadow-lg">Hotels</span>
+            <span className="text-2xl font-bold text-white drop-shadow-lg">{t("accueil_hotels")}</span>
           </Link>
 
           <Link
@@ -92,7 +94,7 @@ export default function Home() {
             style={styleCarteSalles}
             className="flex h-48 w-64 flex-col items-center justify-center rounded-2xl p-8 shadow-xl transition hover:scale-105"
           >
-            <span className="text-2xl font-bold text-white drop-shadow-lg">Salles</span>
+            <span className="text-2xl font-bold text-white drop-shadow-lg">{t("accueil_salles")}</span>
           </Link>
         </div>
       </div>

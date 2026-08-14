@@ -114,8 +114,11 @@ export interface ParametresSite {
   imageAccueilUrl: string;
   imagesDiaporama: string[];
   imageMaisonsUrl: string;
+  imagesDiaporamaMaisons: string[];
   imageHotelsUrl: string;
+  imagesDiaporamaHotels: string[];
   imageSallesUrl: string;
+  imagesDiaporamaSalles: string[];
   couleurBoutonMaisons: string;
   couleurBoutonHotels: string;
   couleurBoutonSalles: string;
