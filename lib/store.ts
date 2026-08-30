@@ -420,6 +420,7 @@ export interface Reservation {
   id: string;
   typeBien: "salle" | "hotel";
   bienId: string;
+  chambreId?: string;
   nomClient: string;
   emailClient: string;
   telephoneClient: string;
@@ -428,21 +429,26 @@ export interface Reservation {
   creneau?: string;
   statut: "en_attente" | "confirmee" | "refusee";
   message: string;
+  montant?: number;
+  stripeSessionId?: string;
 }
 
-function reservationVersDb(r: Omit<Reservation, "id" | "statut">) {
+function reservationVersDb(r: Omit<Reservation, "id" | "statut">, statut: Reservation["statut"] = "en_attente") {
   return {
     id: Date.now().toString(),
     type_bien: r.typeBien,
     bien_id: r.bienId,
+    chambre_id: r.chambreId || null,
     nom_client: r.nomClient,
     email_client: r.emailClient,
     telephone_client: r.telephoneClient,
     date_debut: r.dateDebut,
     date_fin: r.dateFin,
     creneau: r.creneau || null,
-    statut: "en_attente",
+    statut,
     message: r.message,
+    montant: r.montant ?? null,
+    stripe_session_id: r.stripeSessionId || null,
   };
 }
 
@@ -451,6 +457,7 @@ function dbVersReservation(d: any): Reservation {
     id: d.id,
     typeBien: d.type_bien,
     bienId: d.bien_id,
+    chambreId: d.chambre_id || undefined,
     nomClient: d.nom_client,
     emailClient: d.email_client,
     telephoneClient: d.telephone_client,
@@ -459,12 +466,30 @@ function dbVersReservation(d: any): Reservation {
     creneau: d.creneau || undefined,
     statut: d.statut,
     message: d.message,
+    montant: d.montant != null ? Number(d.montant) : undefined,
+    stripeSessionId: d.stripe_session_id || undefined,
   };
 }
 
 export async function creerReservation(r: Omit<Reservation, "id" | "statut">) {
   const { error } = await supabase.from("reservations").insert(reservationVersDb(r));
   if (error) throw new Error(error.message);
+}
+
+// Utilisee uniquement par le webhook Stripe : insere directement une reservation "confirmee"
+// une fois le paiement reussi verifie (jamais appelee suite a une simple demande du client).
+export async function creerReservationPayee(r: Omit<Reservation, "id" | "statut">) {
+  const { error } = await supabase.from("reservations").insert(reservationVersDb(r, "confirmee"));
+  if (error) throw new Error(error.message);
+}
+
+// Stripe peut renvoyer le meme evenement de paiement plusieurs fois (retries, plusieurs
+// "stripe listen" en local, etc.) : cette fonction permet au webhook de verifier qu'une
+// reservation n'a pas deja ete creee pour cette session avant d'en inserer une nouvelle.
+export async function getReservationParStripeSessionId(stripeSessionId: string): Promise<Reservation | undefined> {
+  const { data, error } = await supabase.from("reservations").select("*").eq("stripe_session_id", stripeSessionId).maybeSingle();
+  if (error || !data) return undefined;
+  return dbVersReservation(data);
 }
 
 export async function getReservationsParBien(bienId: string): Promise<Reservation[]> {
@@ -487,6 +512,8 @@ export async function supprimerReservation(id: string) {
   await supabase.from("reservations").delete().eq("id", id);
 }
 
+export type TypeLit = "" | "queen" | "king" | "jumeaux";
+
 export interface ChambreHotel {
   id: string;
   hotelId: string;
@@ -499,6 +526,10 @@ export interface ChambreHotel {
   panorama360Url?: string;
   panoramas?: Panorama360[];
   visiteVirtuelle: boolean;
+  typeLit: TypeLit;
+  estSuite: boolean;
+  sallesDeBain: number;
+  climatisation: boolean;
 }
 
 function chambreVersDb(c: ChambreHotel) {
@@ -514,6 +545,10 @@ function chambreVersDb(c: ChambreHotel) {
     panorama_360_url: c.panorama360Url || null,
     panoramas: c.panoramas || [],
     visite_virtuelle: c.visiteVirtuelle,
+    type_lit: c.typeLit || null,
+    est_suite: c.estSuite,
+    salles_de_bain: c.sallesDeBain,
+    climatisation: c.climatisation,
   };
 }
 
@@ -530,6 +565,10 @@ function dbVersChambre(d: any): ChambreHotel {
     panorama360Url: d.panorama_360_url || undefined,
     panoramas: d.panoramas || [],
     visiteVirtuelle: d.visite_virtuelle,
+    typeLit: d.type_lit || "",
+    estSuite: d.est_suite || false,
+    sallesDeBain: d.salles_de_bain || 1,
+    climatisation: d.climatisation || false,
   };
 }
 
@@ -552,4 +591,46 @@ export async function sauvegarderChambre(chambre: ChambreHotel) {
 
 export async function supprimerChambre(id: string) {
   await supabase.from("chambres").delete().eq("id", id);
+}
+
+export interface HotelPartenaireApi {
+  id: string;
+  hotelId: string;
+  nomSystemePms: string;
+  urlApi: string;
+  cleApi: string;
+  actif: boolean;
+}
+
+function partenaireApiVersDb(p: HotelPartenaireApi) {
+  return {
+    id: p.id,
+    hotel_id: p.hotelId,
+    nom_systeme_pms: p.nomSystemePms,
+    url_api: p.urlApi,
+    cle_api: p.cleApi,
+    actif: p.actif,
+  };
+}
+
+function dbVersPartenaireApi(d: any): HotelPartenaireApi {
+  return {
+    id: d.id,
+    hotelId: d.hotel_id,
+    nomSystemePms: d.nom_systeme_pms || "",
+    urlApi: d.url_api || "",
+    cleApi: d.cle_api || "",
+    actif: d.actif || false,
+  };
+}
+
+export async function getPartenaireApiParHotel(hotelId: string): Promise<HotelPartenaireApi | undefined> {
+  const { data, error } = await supabase.from("hotels_partenaires_api").select("*").eq("hotel_id", hotelId).maybeSingle();
+  if (error || !data) return undefined;
+  return dbVersPartenaireApi(data);
+}
+
+export async function sauvegarderPartenaireApi(partenaire: HotelPartenaireApi) {
+  const { error } = await supabase.from("hotels_partenaires_api").upsert(partenaireApiVersDb(partenaire));
+  if (error) throw new Error(error.message);
 }

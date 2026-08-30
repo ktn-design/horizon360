@@ -3,9 +3,8 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getHotelParId, sauvegarderChambre } from "@/lib/store";
+import { getHotelParId, sauvegarderChambre, ChambreHotel, TypeLit } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
-import { ChambreHotel } from "@/lib/store";
 
 export default function NouvelleChambrePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: hotelId } = use(params);
@@ -21,6 +20,10 @@ export default function NouvelleChambrePage({ params }: { params: Promise<{ id: 
     capacite: 2,
     statut: "disponible" as ChambreHotel["statut"],
     visiteVirtuelle: false,
+    typeLit: "" as TypeLit,
+    estSuite: false,
+    sallesDeBain: 1,
+    climatisation: false,
   });
 
   useEffect(() => {
@@ -74,6 +77,10 @@ export default function NouvelleChambrePage({ params }: { params: Promise<{ id: 
       statut: form.statut,
       photos,
       visiteVirtuelle: form.visiteVirtuelle,
+      typeLit: form.typeLit,
+      estSuite: form.estSuite,
+      sallesDeBain: Number(form.sallesDeBain),
+      climatisation: form.climatisation,
     };
 
     try {
@@ -114,10 +121,36 @@ export default function NouvelleChambrePage({ params }: { params: Promise<{ id: 
           </div>
         </div>
 
-        <label className="flex items-center gap-2 rounded-lg bg-slate-800 p-3 text-sm">
-          <input type="checkbox" checked={form.visiteVirtuelle} onChange={(e) => champ("visiteVirtuelle", e.target.checked)} />
-          Visite virtuelle disponible
-        </label>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-sm text-slate-300">Type de lit</label>
+            <select value={form.typeLit} onChange={(e) => champ("typeLit", e.target.value)} className="input">
+              <option value="">Non specifie</option>
+              <option value="queen">Queen size</option>
+              <option value="king">King size</option>
+              <option value="jumeaux">Lits jumeaux</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm text-slate-300">Salles de bain</label>
+            <input required type="number" min="0" value={form.sallesDeBain} onChange={(e) => champ("sallesDeBain", e.target.value)} className="input" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <label className="flex items-center gap-2 rounded-lg bg-slate-800 p-3 text-sm">
+            <input type="checkbox" checked={form.estSuite} onChange={(e) => champ("estSuite", e.target.checked)} />
+            Suite
+          </label>
+          <label className="flex items-center gap-2 rounded-lg bg-slate-800 p-3 text-sm">
+            <input type="checkbox" checked={form.climatisation} onChange={(e) => champ("climatisation", e.target.checked)} />
+            Climatisation
+          </label>
+          <label className="flex items-center gap-2 rounded-lg bg-slate-800 p-3 text-sm">
+            <input type="checkbox" checked={form.visiteVirtuelle} onChange={(e) => champ("visiteVirtuelle", e.target.checked)} />
+            Visite virtuelle disponible
+          </label>
+        </div>
 
         <div>
           <label className="mb-2 block text-sm text-slate-300">Photos</label>

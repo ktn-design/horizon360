@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { getHotelParId, sauvegarderHotel, supprimerHotel } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
 import { Hotel } from "@/types";
@@ -232,10 +233,13 @@ export default function ModifierHotelPage({ params }: { params: Promise<{ id: st
           </Champ>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
           <button type="submit" className="rounded-lg bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-700">
             Enregistrer les modifications
           </button>
+          <Link href={"/admin/hotels/" + id + "/api-pms"} className="rounded-lg bg-purple-600 px-6 py-3 font-semibold hover:bg-purple-700">
+            Connexion API partenaire (PMS)
+          </Link>
           <button type="button" onClick={handleSupprimer} className="rounded-lg bg-red-600 px-6 py-3 font-semibold hover:bg-red-700">
             Supprimer
           </button>

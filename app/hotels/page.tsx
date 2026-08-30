@@ -200,10 +200,7 @@ export default function HotelsPage() {
                 {"*".repeat(hotel.etoiles)}
                 {"-".repeat(5 - hotel.etoiles)}
               </p>
-              <p className="mb-2 text-lg font-bold text-emerald-400">
-                {hotel.prixParNuit.toLocaleString("fr-CA")} $ {t("hotels_par_nuit")}
-              </p>
-              <div className="flex flex-wrap gap-2 text-xs text-slate-400">
+              <div className="mb-2 flex flex-wrap gap-2 text-xs text-slate-400">
                 {hotel.wifi && <span>{t("hotels_wifi")}</span>}
                 {hotel.piscine && <span>- {t("hotels_piscine")}</span>}
                 {hotel.petitDejeunerInclus && <span>- {t("hotels_petit_dej")}</span>}

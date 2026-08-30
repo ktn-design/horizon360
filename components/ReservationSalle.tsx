@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { creerReservation, getReservationsParBien, Reservation } from "@/lib/store";
+import { creerReservation, getReservationsParBien, getSalleParId, Reservation } from "@/lib/store";
 import { useAuth } from "@/lib/AuthContext";
 import { useLanguage } from "@/lib/LanguageContext";
+import { creneauSalleDisponible } from "@/lib/disponibilite";
 import ModalConnexion from "./ModalConnexion";
 
 interface ReservationSalleProps {
@@ -21,14 +22,17 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
   const [telephone, setTelephone] = useState("");
   const [message, setMessage] = useState("");
   const [reservationsExistantes, setReservationsExistantes] = useState<Reservation[]>([]);
+  const [prixSalle, setPrixSalle] = useState(0);
+  const [modePaiement, setModePaiement] = useState<"carte" | "sur_place">("carte");
   const [envoye, setEnvoye] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState("");
 
   useEffect(() => {
     async function charger() {
-      const res = await getReservationsParBien(salleId);
+      const [res, salle] = await Promise.all([getReservationsParBien(salleId), getSalleParId(salleId)]);
       setReservationsExistantes(res);
+      setPrixSalle(salle?.prix || 0);
     }
     charger();
   }, [salleId]);
@@ -71,7 +75,43 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
       return;
     }
 
+    if (!creneauSalleDisponible(reservationsExistantes, date, creneau)) {
+      setErreur(t("resa_date_pas_libre"));
+      return;
+    }
+
     setEnCours(true);
+
+    if (modePaiement === "carte") {
+      try {
+        const reponse = await fetch("/api/creer-paiement", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            typeBien: "salle",
+            bienId: salleId,
+            nomClient: nom,
+            emailClient: email,
+            telephoneClient: telephone,
+            dateDebut: date,
+            dateFin: date,
+            creneau,
+            message,
+          }),
+        });
+        const data = await reponse.json();
+        if (data.url) {
+          window.location.href = data.url;
+          return;
+        }
+        setErreur(t("resa_erreur_paiement"));
+      } catch (err) {
+        setErreur(t("resa_erreur_paiement"));
+      }
+      setEnCours(false);
+      return;
+    }
+
     try {
       await creerReservation({
         typeBien: "salle",
@@ -83,6 +123,7 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
         dateFin: date,
         creneau,
         message,
+        montant: prixSalle,
       });
       setEnvoye(true);
     } catch (err) {
@@ -163,10 +204,38 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
           <textarea value={message} onChange={(e) => setMessage(e.target.value)} className="input min-h-20" />
         </div>
 
+        <div>
+          <label className="mb-2 block text-sm text-slate-300">{t("resa_mode_paiement")}</label>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 rounded-lg bg-slate-700 p-3 text-sm">
+              <input type="radio" name="modePaiement" value="carte" checked={modePaiement === "carte"} onChange={() => setModePaiement("carte")} />
+              {t("resa_payer_carte")}
+            </label>
+            <label className="flex items-center gap-2 rounded-lg bg-slate-700 p-3 text-sm">
+              <input type="radio" name="modePaiement" value="sur_place" checked={modePaiement === "sur_place"} onChange={() => setModePaiement("sur_place")} />
+              {t("resa_payer_place")}
+            </label>
+          </div>
+        </div>
+
+        {prixSalle > 0 && (
+          <p className="text-sm text-slate-300">
+            {t("resa_prix_total")} : <span className="font-bold text-emerald-400">{prixSalle.toLocaleString("fr-CA")} $</span>
+          </p>
+        )}
+
         {erreur && <p className="text-sm text-red-400">{erreur}</p>}
 
         <button type="submit" disabled={enCours} className="w-full rounded-lg bg-blue-600 py-3 font-semibold hover:bg-blue-700 disabled:opacity-50">
-          {enCours ? t("resa_envoi") : user ? t("resa_demander") : t("resa_titre_salle")}
+          {enCours
+            ? modePaiement === "carte"
+              ? t("resa_redirection_paiement")
+              : t("resa_envoi")
+            : user
+            ? modePaiement === "carte"
+              ? t("resa_payer_carte")
+              : t("resa_demander")
+            : t("resa_titre_salle")}
         </button>
       </form>
 

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { creerReservation, getReservationsParBien, Reservation } from "@/lib/store";
+import { creerReservation, getReservationsParBien, getChambresParHotel, getHotelParId, Reservation, ChambreHotel } from "@/lib/store";
 import { useAuth } from "@/lib/AuthContext";
 import { useLanguage } from "@/lib/LanguageContext";
+import { periodeHotelDisponible } from "@/lib/disponibilite";
 import ModalConnexion from "./ModalConnexion";
 
 interface ReservationHotelProps {
@@ -21,14 +22,24 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
   const [telephone, setTelephone] = useState("");
   const [message, setMessage] = useState("");
   const [reservationsExistantes, setReservationsExistantes] = useState<Reservation[]>([]);
+  const [chambres, setChambres] = useState<ChambreHotel[]>([]);
+  const [chambreId, setChambreId] = useState("");
+  const [prixParNuitHotel, setPrixParNuitHotel] = useState(0);
+  const [modePaiement, setModePaiement] = useState<"carte" | "sur_place">("carte");
   const [envoye, setEnvoye] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState("");
 
   useEffect(() => {
     async function charger() {
-      const res = await getReservationsParBien(hotelId);
+      const [res, chs, hotel] = await Promise.all([
+        getReservationsParBien(hotelId),
+        getChambresParHotel(hotelId),
+        getHotelParId(hotelId),
+      ]);
       setReservationsExistantes(res);
+      setChambres(chs.filter((c) => c.statut === "disponible"));
+      setPrixParNuitHotel(hotel?.prixParNuit || 0);
     }
     charger();
   }, [hotelId]);
@@ -39,9 +50,13 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
     }
   }, [user]);
 
-  function periodesSeChevauchent(debut1: string, fin1: string, debut2: string, fin2: string) {
-    return debut1 < fin2 && debut2 < fin1;
-  }
+  const chambreSelectionnee = chambres.find((c) => c.id === chambreId);
+  const prixParNuit = chambreSelectionnee ? chambreSelectionnee.prixParNuit : prixParNuitHotel;
+  const nuits =
+    dateArrivee && dateDepart && dateDepart > dateArrivee
+      ? Math.round((new Date(dateDepart).getTime() - new Date(dateArrivee).getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+  const montant = nuits * prixParNuit;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,27 +75,61 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
       setErreur(t("resa_depart_apres_arrivee"));
       return;
     }
+    if (chambres.length > 0 && !chambreId) {
+      setErreur(t("resa_choisir_chambre_requis"));
+      return;
+    }
 
-    const conflit = reservationsExistantes.some((r) =>
-      periodesSeChevauchent(dateArrivee, dateDepart, r.dateDebut, r.dateFin)
-    );
-
-    if (conflit) {
+    const disponible = periodeHotelDisponible(reservationsExistantes, chambreId || undefined, dateArrivee, dateDepart);
+    if (!disponible) {
       setErreur(t("resa_dates_indisponibles"));
       return;
     }
 
     setEnCours(true);
+
+    if (modePaiement === "carte") {
+      try {
+        const reponse = await fetch("/api/creer-paiement", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            typeBien: "hotel",
+            bienId: hotelId,
+            chambreId: chambreId || undefined,
+            nomClient: nom,
+            emailClient: email,
+            telephoneClient: telephone,
+            dateDebut: dateArrivee,
+            dateFin: dateDepart,
+            message,
+          }),
+        });
+        const data = await reponse.json();
+        if (data.url) {
+          window.location.href = data.url;
+          return;
+        }
+        setErreur(t("resa_erreur_paiement"));
+      } catch (err) {
+        setErreur(t("resa_erreur_paiement"));
+      }
+      setEnCours(false);
+      return;
+    }
+
     try {
       await creerReservation({
         typeBien: "hotel",
         bienId: hotelId,
+        chambreId: chambreId || undefined,
         nomClient: nom,
         emailClient: email,
         telephoneClient: telephone,
         dateDebut: dateArrivee,
         dateFin: dateDepart,
         message,
+        montant,
       });
       setEnvoye(true);
     } catch (err) {
@@ -134,6 +183,20 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
           </div>
         </div>
 
+        {chambres.length > 0 && (
+          <div>
+            <label className="mb-1 block text-sm text-slate-300">{t("resa_choisir_chambre")}</label>
+            <select required value={chambreId} onChange={(e) => setChambreId(e.target.value)} className="input">
+              <option value="">{t("resa_chambre_selectionner")}</option>
+              {chambres.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nom} — {c.prixParNuit.toLocaleString("fr-CA")} $/nuit
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className="mb-1 block text-sm text-slate-300">{t("resa_nom_complet")}</label>
           <input required value={nom} onChange={(e) => setNom(e.target.value)} className="input" />
@@ -154,10 +217,38 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
           <textarea value={message} onChange={(e) => setMessage(e.target.value)} className="input min-h-20" />
         </div>
 
+        <div>
+          <label className="mb-2 block text-sm text-slate-300">{t("resa_mode_paiement")}</label>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 rounded-lg bg-slate-700 p-3 text-sm">
+              <input type="radio" name="modePaiement" value="carte" checked={modePaiement === "carte"} onChange={() => setModePaiement("carte")} />
+              {t("resa_payer_carte")}
+            </label>
+            <label className="flex items-center gap-2 rounded-lg bg-slate-700 p-3 text-sm">
+              <input type="radio" name="modePaiement" value="sur_place" checked={modePaiement === "sur_place"} onChange={() => setModePaiement("sur_place")} />
+              {t("resa_payer_place")}
+            </label>
+          </div>
+        </div>
+
+        {montant > 0 && (
+          <p className="text-sm text-slate-300">
+            {t("resa_prix_total")} : <span className="font-bold text-emerald-400">{montant.toLocaleString("fr-CA")} $</span>
+          </p>
+        )}
+
         {erreur && <p className="text-sm text-red-400">{erreur}</p>}
 
         <button type="submit" disabled={enCours} className="w-full rounded-lg bg-blue-600 py-3 font-semibold hover:bg-blue-700 disabled:opacity-50">
-          {enCours ? t("resa_envoi") : user ? t("resa_demander") : t("resa_titre_hotel")}
+          {enCours
+            ? modePaiement === "carte"
+              ? t("resa_redirection_paiement")
+              : t("resa_envoi")
+            : user
+            ? modePaiement === "carte"
+              ? t("resa_payer_carte")
+              : t("resa_demander")
+            : t("resa_titre_hotel")}
         </button>
       </form>
 

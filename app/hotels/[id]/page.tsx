@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { getHotelParId, getChambresParHotel, ChambreHotel } from "@/lib/store";
+import { getHotelParId, getChambresParHotel, ChambreHotel, TypeLit } from "@/lib/store";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Hotel } from "@/types";
@@ -78,10 +78,6 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
             {hotel.localisation.ville}, {hotel.localisation.province}, {hotel.localisation.pays}
           </p>
 
-          <p className="mt-4 text-2xl font-bold text-emerald-400">
-            {hotel.prixParNuit.toLocaleString("fr-CA")} $ {t("hotels_par_nuit")}
-          </p>
-
           <p className="mt-6 leading-relaxed text-slate-300">{hotel.description}</p>
 
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -104,7 +100,16 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
                       <img src={chambre.photos[0]} alt="" className="mb-3 h-32 w-full rounded-lg object-cover" />
                     )}
                     <h3 className="font-semibold">{chambre.nom}</h3>
-                    <p className="text-sm text-slate-400">{chambre.capacite} personnes</p>
+                    <p className="text-sm text-slate-400">
+                      {chambre.capacite} personnes - {chambre.sallesDeBain} salle{chambre.sallesDeBain > 1 ? "s" : ""} de bain
+                    </p>
+                    {chambre.typeLit && (
+                      <p className="text-sm text-slate-400">{libelleTypeLit(chambre.typeLit)}</p>
+                    )}
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
+                      {chambre.estSuite && <span>Suite</span>}
+                      {chambre.climatisation && <span>- {t("fiche_climatisation")}</span>}
+                    </div>
                     <p className="mt-1 font-bold text-emerald-400">{chambre.prixParNuit.toLocaleString("fr-CA")} $/nuit</p>
                     {chambre.visiteVirtuelle && (
                       <Link href={"/hotels/" + hotel.id + "/chambres/" + chambre.id + "/visite"} className="mt-2 block rounded-lg bg-blue-600 py-2 text-center text-xs font-semibold hover:bg-blue-700">
@@ -141,6 +146,13 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
       <AssistantDeco contexte={contexteIA} />
     </main>
   );
+}
+
+function libelleTypeLit(typeLit: TypeLit) {
+  if (typeLit === "queen") return "Lit Queen size";
+  if (typeLit === "king") return "Lit King size";
+  if (typeLit === "jumeaux") return "Lits jumeaux";
+  return "";
 }
 
 function Badge({ label }: { label: string }) {
