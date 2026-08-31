@@ -10,6 +10,7 @@ export default function ReservationsAdminPage() {
   const router = useRouter();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [charge, setCharge] = useState(false);
+  const [enCoursConfirmation, setEnCoursConfirmation] = useState<string | null>(null);
 
   useEffect(() => {
     async function charger() {
@@ -34,13 +35,18 @@ export default function ReservationsAdminPage() {
   }
 
   async function handleConfirmer(r: Reservation) {
-    await changerStatutReservation(r.id, "confirmee");
-    await envoyerEmail(
-      r.emailClient,
-      "Votre reservation est confirmee - Horizon 360",
-      "<p>Bonjour " + r.nomClient + ",</p><p>Votre reservation " + texteCreneauPeriode(r) + " a ete <strong>confirmee</strong>.</p><p>Merci de votre confiance.</p><p>Horizon 360</p>"
-    );
+    setEnCoursConfirmation(r.id);
+    try {
+      await fetch("/api/confirmer-reservation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: r.id }),
+      });
+    } catch (err) {
+      alert("Erreur lors de la confirmation.");
+    }
     setReservations(await getToutesReservations());
+    setEnCoursConfirmation(null);
   }
 
   async function handleRefuser(r: Reservation) {
@@ -87,8 +93,12 @@ export default function ReservationsAdminPage() {
               <div className="flex gap-2">
                 {r.statut === "en_attente" && (
                   <>
-                    <button onClick={() => handleConfirmer(r)} className="rounded-lg bg-emerald-600 px-3 py-1 text-xs hover:bg-emerald-700">
-                      Confirmer
+                    <button
+                      onClick={() => handleConfirmer(r)}
+                      disabled={enCoursConfirmation === r.id}
+                      className="rounded-lg bg-emerald-600 px-3 py-1 text-xs hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {enCoursConfirmation === r.id ? "Confirmation..." : "Confirmer"}
                     </button>
                     <button onClick={() => handleRefuser(r)} className="rounded-lg bg-red-600 px-3 py-1 text-xs hover:bg-red-700">
                       Refuser

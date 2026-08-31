@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripeServeur";
 import { creerReservationPayee, getReservationsParBien, getReservationParStripeSessionId } from "@/lib/store";
 import { periodeHotelDisponible, creneauSalleDisponible } from "@/lib/disponibilite";
+import { envoyerConfirmationReservation } from "@/lib/confirmation";
 
 export async function POST(request: Request) {
   const corpsBrut = await request.text();
@@ -74,6 +75,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ recu: true, dejaTraite: true });
     }
     throw err;
+  }
+
+  const reservationCreee = await getReservationParStripeSessionId(session.id);
+  if (reservationCreee) {
+    const origine = new URL(request.url).origin;
+    try {
+      await envoyerConfirmationReservation(reservationCreee, true, origine);
+    } catch (err) {
+      // La reservation est deja confirmee et payee : une erreur d'envoi d'email ne doit pas
+      // faire echouer le webhook (Stripe le reessaierait et pourrait recreer une reservation).
+      console.error("Erreur envoi email de confirmation :", err);
+    }
   }
 
   return NextResponse.json({ recu: true });

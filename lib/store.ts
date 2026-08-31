@@ -492,6 +492,12 @@ export async function getReservationParStripeSessionId(stripeSessionId: string):
   return dbVersReservation(data);
 }
 
+export async function getReservationParId(id: string): Promise<Reservation | undefined> {
+  const { data, error } = await supabase.from("reservations").select("*").eq("id", id).maybeSingle();
+  if (error || !data) return undefined;
+  return dbVersReservation(data);
+}
+
 export async function getReservationsParBien(bienId: string): Promise<Reservation[]> {
   const { data, error } = await supabase.from("reservations").select("*").eq("bien_id", bienId).eq("statut", "confirmee");
   if (error || !data) return [];
