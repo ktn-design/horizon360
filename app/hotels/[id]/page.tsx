@@ -19,9 +19,8 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
 
   useEffect(() => {
     async function charger() {
-      const h = await getHotelParId(id);
+      const [h, c] = await Promise.all([getHotelParId(id), getChambresParHotel(id)]);
       setHotel(h || null);
-      const c = await getChambresParHotel(id);
       setChambres(c);
       setCharge(true);
     }
@@ -57,7 +56,7 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
                   onClick={() => setPhotoActive(i)}
                   className={i === photoActive ? "h-16 w-24 overflow-hidden rounded-lg border-2 border-blue-500" : "h-16 w-24 overflow-hidden rounded-lg border-2 border-transparent"}
                 >
-                  <img src={photo} alt="" className="h-full w-full object-cover" />
+                  <img src={photo} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
@@ -95,36 +94,43 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
               <h2 className="mb-4 text-xl font-semibold">Chambres disponibles ({chambres.length})</h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {chambres.map((chambre) => (
-                  <div key={chambre.id} className="rounded-xl bg-slate-800 p-4">
-                    {chambre.photos.length > 0 && (
-                      <img src={chambre.photos[0]} alt="" className="mb-3 h-32 w-full rounded-lg object-cover" />
-                    )}
-                    <h3 className="font-semibold">{chambre.nom}</h3>
-                    <p className="text-sm text-slate-400">
-                      {chambre.capacite} personnes - {chambre.sallesDeBain} salle{chambre.sallesDeBain > 1 ? "s" : ""} de bain
-                    </p>
-                    {chambre.typeLit && (
-                      <p className="text-sm text-slate-400">{libelleTypeLit(chambre.typeLit)}</p>
-                    )}
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
-                      {chambre.estSuite && <span>Suite</span>}
-                      {chambre.climatisation && <span>- {t("fiche_climatisation")}</span>}
+                  <Link
+                    key={chambre.id}
+                    href={"/hotels/" + hotel.id + "/chambres/" + chambre.id}
+                    className="block overflow-hidden rounded-xl bg-slate-800 transition hover:bg-slate-700"
+                  >
+                    <div className="aspect-video w-full overflow-hidden bg-slate-700">
+                      {chambre.photos.length > 0 ? (
+                        <img src={chambre.photos[0]} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-sm text-slate-500">{t("aucune_photo")}</div>
+                      )}
                     </div>
-                    <p className="mt-1 font-bold text-emerald-400">{chambre.prixParNuit.toLocaleString("fr-CA")} $/nuit</p>
-                    {chambre.visiteVirtuelle && (
-                      <Link href={"/hotels/" + hotel.id + "/chambres/" + chambre.id + "/visite"} className="mt-2 block rounded-lg bg-blue-600 py-2 text-center text-xs font-semibold hover:bg-blue-700">
-                        Visite virtuelle
-                      </Link>
-                    )}
-                  </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold">{chambre.nom}</h3>
+                      <p className="text-sm text-slate-400">
+                        {chambre.capacite} personnes - {chambre.sallesDeBain} salle{chambre.sallesDeBain > 1 ? "s" : ""} de bain
+                      </p>
+                      {chambre.typeLit && (
+                        <p className="text-sm text-slate-400">{libelleTypeLit(chambre.typeLit)}</p>
+                      )}
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
+                        {chambre.estSuite && <span>Suite</span>}
+                        {chambre.climatisation && <span>- {t("fiche_climatisation")}</span>}
+                      </div>
+                      <p className="mt-1 font-bold text-emerald-400">{chambre.prixParNuit.toLocaleString("fr-CA")} $/nuit</p>
+                    </div>
+                  </Link>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="mt-8">
-            <ReservationHotel hotelId={hotel.id} />
-          </div>
+          {chambres.length === 0 && (
+            <div className="mt-8">
+              <ReservationHotel hotelId={hotel.id} />
+            </div>
+          )}
         </div>
 
         <div className="h-fit rounded-xl bg-slate-800 p-6">

@@ -118,6 +118,14 @@ export default function HotelsPage() {
         )}
       </form>
 
+      <Link
+        href="/chambres"
+        className="mb-10 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-800/90 p-5 transition hover:bg-slate-700/90"
+      >
+        <span className="text-slate-300">{t("chambres_lien_hotels")}</span>
+        <span className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold">{t("chambres_lien_hotels_action")}</span>
+      </Link>
+
       <div className="mb-10 flex flex-wrap items-end gap-6 rounded-xl bg-slate-800/90 p-6">
         <div>
           <label className="mb-1 block text-sm text-slate-300">
@@ -186,7 +194,7 @@ export default function HotelsPage() {
           >
             <div className="aspect-video w-full overflow-hidden bg-slate-700">
               {hotel.photos.length > 0 ? (
-                <img src={hotel.photos[0]} alt={hotel.titre} className="h-full w-full object-cover" />
+                <img src={hotel.photos[0]} alt={hotel.titre} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full items-center justify-center text-slate-500 text-sm">{t("aucune_photo")}</div>
               )}

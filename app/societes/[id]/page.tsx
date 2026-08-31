@@ -16,9 +16,8 @@ export default function SocieteDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     async function charger() {
-      const s = await getSocieteParId(id);
+      const [s, im] = await Promise.all([getSocieteParId(id), getImmeublesParSociete(id)]);
       setSociete(s || null);
-      const im = await getImmeublesParSociete(id);
       setImmeubles(im);
       setCharge(true);
     }
@@ -35,7 +34,7 @@ export default function SocieteDetailPage({ params }: { params: Promise<{ id: st
       </Link>
 
       <div className="mb-10 flex items-center gap-4">
-        {societe.logoUrl && <img src={societe.logoUrl} alt="" className="h-20 w-20 rounded-lg object-cover" />}
+        {societe.logoUrl && <img src={societe.logoUrl} alt="" loading="lazy" decoding="async" className="h-20 w-20 rounded-lg object-cover" />}
         <div>
           <h1 className="text-3xl font-bold">{societe.nom}</h1>
           <p className="mt-1 text-slate-300">{societe.description}</p>
@@ -51,7 +50,7 @@ export default function SocieteDetailPage({ params }: { params: Promise<{ id: st
             className="rounded-xl bg-slate-800 p-5 transition hover:bg-slate-700"
           >
             {immeuble.photos.length > 0 && (
-              <img src={immeuble.photos[0]} alt="" className="mb-3 h-40 w-full rounded-lg object-cover" />
+              <img src={immeuble.photos[0]} alt="" loading="lazy" decoding="async" className="mb-3 h-40 w-full rounded-lg object-cover" />
             )}
             <h3 className="mb-1 text-lg font-semibold">{immeuble.nom}</h3>
             <p className="text-sm text-slate-400">

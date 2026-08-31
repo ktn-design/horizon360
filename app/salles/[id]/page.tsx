@@ -65,7 +65,7 @@ export default function SalleDetailPage({ params }: { params: Promise<{ id: stri
                   onClick={() => setPhotoActive(i)}
                   className={i === photoActive ? "h-16 w-24 overflow-hidden rounded-lg border-2 border-blue-500" : "h-16 w-24 overflow-hidden rounded-lg border-2 border-transparent"}
                 >
-                  <img src={photo} alt="" className="h-full w-full object-cover" />
+                  <img src={photo} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>

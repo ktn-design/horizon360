@@ -33,7 +33,7 @@ export default function SocietesPage() {
             href={"/societes/" + societe.id}
             className="rounded-xl bg-slate-800 p-6 transition hover:bg-slate-700"
           >
-            {societe.logoUrl && <img src={societe.logoUrl} alt="" className="mb-4 h-16 w-16 rounded-lg object-cover" />}
+            {societe.logoUrl && <img src={societe.logoUrl} alt="" loading="lazy" decoding="async" className="mb-4 h-16 w-16 rounded-lg object-cover" />}
             <h2 className="mb-2 text-xl font-semibold">{societe.nom}</h2>
             <p className="text-sm text-slate-400">{societe.description}</p>
           </Link>

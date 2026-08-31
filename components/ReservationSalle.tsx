@@ -43,6 +43,35 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
     }
   }, [user]);
 
+  const cleSauvegarde = "resa_form_salle_" + salleId;
+
+  // Restaure le formulaire si l'utilisateur revient sur la page (ex: apres une connexion Google,
+  // qui recharge completement le navigateur et effacerait sinon tout ce qui a ete tape).
+  useEffect(() => {
+    try {
+      const sauvegarde = sessionStorage.getItem(cleSauvegarde);
+      if (!sauvegarde) return;
+      const d = JSON.parse(sauvegarde);
+      if (d.date) setDate(d.date);
+      if (d.creneau) setCreneau(d.creneau);
+      if (d.nom) setNom(d.nom);
+      if (d.telephone) setTelephone(d.telephone);
+      if (d.message) setMessage(d.message);
+      if (d.modePaiement) setModePaiement(d.modePaiement);
+    } catch {
+      // sessionStorage indisponible ou donnees corrompues : pas grave, on repart d'un formulaire vide
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleSauvegarde]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(cleSauvegarde, JSON.stringify({ date, creneau, nom, telephone, message, modePaiement }));
+    } catch {
+      // pas grave si sessionStorage n'est pas disponible (navigation privee, etc.)
+    }
+  }, [cleSauvegarde, date, creneau, nom, telephone, message, modePaiement]);
+
   const creneauxPrisPourDate = reservationsExistantes.filter((r) => r.dateDebut === date).map((r) => r.creneau);
   const journeeIndisponible = creneauxPrisPourDate.includes("journee");
   const matinPris = creneauxPrisPourDate.includes("matin") || journeeIndisponible;
@@ -126,6 +155,9 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
         montant: prixSalle,
       });
       setEnvoye(true);
+      try {
+        sessionStorage.removeItem(cleSauvegarde);
+      } catch {}
     } catch (err) {
       setErreur(t("resa_erreur"));
     }

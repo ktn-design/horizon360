@@ -188,7 +188,7 @@ export default function MaisonsPage() {
           >
             <div className="aspect-video w-full overflow-hidden bg-slate-700">
               {maison.photos.length > 0 ? (
-                <img src={maison.photos[0]} alt={maison.titre} className="h-full w-full object-cover" />
+                <img src={maison.photos[0]} alt={maison.titre} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full items-center justify-center text-slate-500 text-sm">{t("aucune_photo")}</div>
               )}

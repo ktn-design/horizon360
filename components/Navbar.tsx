@@ -25,9 +25,12 @@ export default function Navbar() {
         <Link href="/contact" className="hover:text-blue-400">{t("nav_contact")}</Link>
 
         {user ? (
-          <button onClick={deconnexion} className="rounded-lg bg-slate-800 px-3 py-1 text-xs hover:bg-slate-700">
-            Deconnexion
-          </button>
+          <>
+            <Link href="/mon-compte" className="hover:text-blue-400">{t("nav_mon_compte")}</Link>
+            <button onClick={deconnexion} className="rounded-lg bg-slate-800 px-3 py-1 text-xs hover:bg-slate-700">
+              Deconnexion
+            </button>
+          </>
         ) : (
           <button onClick={() => setAfficherConnexion(true)} className="rounded-lg bg-blue-600 px-3 py-1 text-xs hover:bg-blue-700">
             Se connecter

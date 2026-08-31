@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { creerReservation, getReservationsParBien, getChambresParHotel, getHotelParId, Reservation, ChambreHotel } from "@/lib/store";
+import { creerReservation, getReservationsParBien, getChambresParHotel, getChambreParId, getHotelParId, Reservation, ChambreHotel } from "@/lib/store";
 import { useAuth } from "@/lib/AuthContext";
 import { useLanguage } from "@/lib/LanguageContext";
 import { periodeHotelDisponible } from "@/lib/disponibilite";
@@ -9,9 +9,12 @@ import ModalConnexion from "./ModalConnexion";
 
 interface ReservationHotelProps {
   hotelId: string;
+  // Si fourni, la reservation cible directement cette chambre (pas de selecteur affiche) -
+  // utilise depuis la fiche detaillee d'une chambre.
+  chambreIdFixe?: string;
 }
 
-export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
+export default function ReservationHotel({ hotelId, chambreIdFixe }: ReservationHotelProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [afficherConnexion, setAfficherConnexion] = useState(false);
@@ -23,7 +26,7 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
   const [message, setMessage] = useState("");
   const [reservationsExistantes, setReservationsExistantes] = useState<Reservation[]>([]);
   const [chambres, setChambres] = useState<ChambreHotel[]>([]);
-  const [chambreId, setChambreId] = useState("");
+  const [chambreId, setChambreId] = useState(chambreIdFixe || "");
   const [prixParNuitHotel, setPrixParNuitHotel] = useState(0);
   const [modePaiement, setModePaiement] = useState<"carte" | "sur_place">("carte");
   const [envoye, setEnvoye] = useState(false);
@@ -32,6 +35,13 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
 
   useEffect(() => {
     async function charger() {
+      if (chambreIdFixe) {
+        const [res, chambre] = await Promise.all([getReservationsParBien(hotelId), getChambreParId(chambreIdFixe)]);
+        setReservationsExistantes(res);
+        setChambres(chambre ? [chambre] : []);
+        setChambreId(chambreIdFixe);
+        return;
+      }
       const [res, chs, hotel] = await Promise.all([
         getReservationsParBien(hotelId),
         getChambresParHotel(hotelId),
@@ -42,13 +52,46 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
       setPrixParNuitHotel(hotel?.prixParNuit || 0);
     }
     charger();
-  }, [hotelId]);
+  }, [hotelId, chambreIdFixe]);
 
   useEffect(() => {
     if (user?.email) {
       setEmail(user.email);
     }
   }, [user]);
+
+  const cleSauvegarde = "resa_form_hotel_" + hotelId + (chambreIdFixe ? "_" + chambreIdFixe : "");
+
+  // Restaure le formulaire si l'utilisateur revient sur la page (ex: apres une connexion Google,
+  // qui recharge completement le navigateur et effacerait sinon tout ce qui a ete tape).
+  useEffect(() => {
+    try {
+      const sauvegarde = sessionStorage.getItem(cleSauvegarde);
+      if (!sauvegarde) return;
+      const d = JSON.parse(sauvegarde);
+      if (d.dateArrivee) setDateArrivee(d.dateArrivee);
+      if (d.dateDepart) setDateDepart(d.dateDepart);
+      if (d.nom) setNom(d.nom);
+      if (d.telephone) setTelephone(d.telephone);
+      if (d.message) setMessage(d.message);
+      if (d.chambreId && !chambreIdFixe) setChambreId(d.chambreId);
+      if (d.modePaiement) setModePaiement(d.modePaiement);
+    } catch {
+      // sessionStorage indisponible ou donnees corrompues : pas grave, on repart d'un formulaire vide
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleSauvegarde]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        cleSauvegarde,
+        JSON.stringify({ dateArrivee, dateDepart, nom, telephone, message, chambreId, modePaiement })
+      );
+    } catch {
+      // pas grave si sessionStorage n'est pas disponible (navigation privee, etc.)
+    }
+  }, [cleSauvegarde, dateArrivee, dateDepart, nom, telephone, message, chambreId, modePaiement]);
 
   const chambreSelectionnee = chambres.find((c) => c.id === chambreId);
   const prixParNuit = chambreSelectionnee ? chambreSelectionnee.prixParNuit : prixParNuitHotel;
@@ -132,6 +175,9 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
         montant,
       });
       setEnvoye(true);
+      try {
+        sessionStorage.removeItem(cleSauvegarde);
+      } catch {}
     } catch (err) {
       setErreur(t("resa_erreur"));
     }
@@ -183,7 +229,7 @@ export default function ReservationHotel({ hotelId }: ReservationHotelProps) {
           </div>
         </div>
 
-        {chambres.length > 0 && (
+        {!chambreIdFixe && chambres.length > 0 && (
           <div>
             <label className="mb-1 block text-sm text-slate-300">{t("resa_choisir_chambre")}</label>
             <select required value={chambreId} onChange={(e) => setChambreId(e.target.value)} className="input">

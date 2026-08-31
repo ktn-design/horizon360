@@ -194,7 +194,7 @@ export default function SallesPage() {
             className="rounded-xl bg-slate-800/90 p-5 transition hover:bg-slate-700/90"
           >
             {salle.photos.length > 0 && (
-              <img src={salle.photos[0]} alt="" className="mb-3 h-40 w-full rounded-lg object-cover" />
+              <img src={salle.photos[0]} alt="" loading="lazy" decoding="async" className="mb-3 h-40 w-full rounded-lg object-cover" />
             )}
             <h2 className="mb-2 text-xl font-semibold">{salle.titre}</h2>
             <p className="mb-1 text-slate-300">

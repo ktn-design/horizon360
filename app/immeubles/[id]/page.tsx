@@ -16,9 +16,8 @@ export default function ImmeubleDetailPage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     async function charger() {
-      const i = await getImmeubleParId(id);
+      const [i, a] = await Promise.all([getImmeubleParId(id), getMaisonsParImmeuble(id)]);
       setImmeuble(i || null);
-      const a = await getMaisonsParImmeuble(id);
       setAppartements(a);
       setCharge(true);
     }

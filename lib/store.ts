@@ -504,6 +504,12 @@ export async function getReservationsParBien(bienId: string): Promise<Reservatio
   return data.map(dbVersReservation);
 }
 
+export async function getReservationsParEmail(email: string): Promise<Reservation[]> {
+  const { data, error } = await supabase.from("reservations").select("*").eq("email_client", email).order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return data.map(dbVersReservation);
+}
+
 export async function getToutesReservations(): Promise<Reservation[]> {
   const { data, error } = await supabase.from("reservations").select("*").order("created_at", { ascending: false });
   if (error || !data) return [];
@@ -580,6 +586,12 @@ function dbVersChambre(d: any): ChambreHotel {
 
 export async function getChambresParHotel(hotelId: string): Promise<ChambreHotel[]> {
   const { data, error } = await supabase.from("chambres").select("*").eq("hotel_id", hotelId).order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return data.map(dbVersChambre);
+}
+
+export async function getToutesLesChambres(): Promise<ChambreHotel[]> {
+  const { data, error } = await supabase.from("chambres").select("*").order("created_at", { ascending: false });
   if (error || !data) return [];
   return data.map(dbVersChambre);
 }
