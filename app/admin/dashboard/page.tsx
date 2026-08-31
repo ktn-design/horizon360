@@ -72,6 +72,9 @@ export default function DashboardPage() {
         <Link href="/admin/reservations" className="rounded-lg bg-slate-700 px-5 py-3 font-semibold hover:bg-slate-600">
           Reservations
         </Link>
+        <Link href="/admin/statistiques" className="rounded-lg bg-slate-700 px-5 py-3 font-semibold hover:bg-slate-600">
+          Statistiques
+        </Link>
       </div>
 
       <h2 className="mb-4 text-xl font-semibold">Maisons ({maisons.length})</h2>

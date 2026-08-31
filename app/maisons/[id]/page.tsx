@@ -7,10 +7,12 @@ import { notFound } from "next/navigation";
 import { Maison } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import AssistantDeco from "@/components/AssistantDeco";
+import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
 
 export default function MaisonDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { t } = useLanguage();
+  useEnregistrerVisite("maison_detail");
   const [maison, setMaison] = useState<Maison | null>(null);
   const [photoActive, setPhotoActive] = useState(0);
   const [charge, setCharge] = useState(false);

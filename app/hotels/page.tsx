@@ -6,9 +6,11 @@ import { getHotels, getParametres } from "@/lib/store";
 import { ParametresSite, Hotel } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import Diaporama from "@/components/Diaporama";
+import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
 
 export default function HotelsPage() {
   const { t } = useLanguage();
+  useEnregistrerVisite("hotels");
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [etoilesMin, setEtoilesMin] = useState<number>(0);
   const [prixMax, setPrixMax] = useState<number>(1000);

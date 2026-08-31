@@ -8,10 +8,12 @@ import { Hotel } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import ReservationHotel from "@/components/ReservationHotel";
 import AssistantDeco from "@/components/AssistantDeco";
+import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
 
 export default function HotelDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { t } = useLanguage();
+  useEnregistrerVisite("hotel_detail");
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [chambres, setChambres] = useState<ChambreHotel[]>([]);
   const [photoActive, setPhotoActive] = useState(0);

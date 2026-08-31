@@ -6,9 +6,11 @@ import { getParametres } from "@/lib/store";
 import { ParametresSite } from "@/types";
 import Diaporama from "@/components/Diaporama";
 import { useLanguage } from "@/lib/LanguageContext";
+import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
 
 export default function Home() {
   const { t } = useLanguage();
+  useEnregistrerVisite("accueil");
   const [parametres, setParametres] = useState<ParametresSite | null>(null);
   const [charge, setCharge] = useState(false);
 

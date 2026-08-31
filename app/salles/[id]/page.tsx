@@ -8,10 +8,12 @@ import { Salle, TypeEvenement } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import ReservationSalle from "@/components/ReservationSalle";
 import AssistantDeco from "@/components/AssistantDeco";
+import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
 
 export default function SalleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { t } = useLanguage();
+  useEnregistrerVisite("salle_detail");
 
   const labelsEvenements: Record<string, string> = {
     mariage: t("evenement_mariage"),

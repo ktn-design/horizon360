@@ -6,9 +6,11 @@ import { getSalles, getParametres } from "@/lib/store";
 import { TypeEvenement, Salle, ParametresSite } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import Diaporama from "@/components/Diaporama";
+import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
 
 export default function SallesPage() {
   const { t } = useLanguage();
+  useEnregistrerVisite("salles");
 
   const evenementsListe: { valeur: TypeEvenement; label: string }[] = [
     { valeur: "mariage", label: t("evenement_mariage") },

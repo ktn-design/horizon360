@@ -6,9 +6,11 @@ import { getMaisons, getParametres } from "@/lib/store";
 import { ParametresSite, Maison } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import Diaporama from "@/components/Diaporama";
+import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
 
 export default function MaisonsPage() {
   const { t } = useLanguage();
+  useEnregistrerVisite("maisons");
   const [maisons, setMaisons] = useState<Maison[]>([]);
   const [transactionFiltre, setTransactionFiltre] = useState<string>("toutes");
   const [prixMax, setPrixMax] = useState<number>(1000000);

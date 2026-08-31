@@ -652,3 +652,39 @@ export async function sauvegarderPartenaireApi(partenaire: HotelPartenaireApi) {
   const { error } = await supabase.from("hotels_partenaires_api").upsert(partenaireApiVersDb(partenaire));
   if (error) throw new Error(error.message);
 }
+
+export interface Visite {
+  id: string;
+  page: string;
+  pays?: string;
+  ville?: string;
+  createdAt: string;
+}
+
+export async function enregistrerVisite(donnees: { page: string; pays?: string; ville?: string; ip?: string }) {
+  const { error } = await supabase.from("visites").insert({
+    id: Date.now().toString() + "-" + Math.random().toString(36).slice(2, 8),
+    page: donnees.page,
+    pays: donnees.pays || null,
+    ville: donnees.ville || null,
+    ip: donnees.ip || null,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function getVisites(depuisJours: number = 90): Promise<Visite[]> {
+  const depuis = new Date(Date.now() - depuisJours * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("visites")
+    .select("id, page, pays, ville, created_at")
+    .gte("created_at", depuis)
+    .order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return data.map((d: any) => ({
+    id: d.id,
+    page: d.page,
+    pays: d.pays || undefined,
+    ville: d.ville || undefined,
+    createdAt: d.created_at,
+  }));
+}
