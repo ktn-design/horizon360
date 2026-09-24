@@ -18,7 +18,7 @@ function libelleCreneau(creneau: string): string {
 
 async function recupererLogo(origine: string): Promise<Buffer | undefined> {
   try {
-    const reponse = await fetch(origine + "/rev.png");
+    const reponse = await fetch(origine + "/logo-horizon360-icone.png");
     if (!reponse.ok) return undefined;
     const arrayBuffer = await reponse.arrayBuffer();
     return Buffer.from(arrayBuffer);
@@ -91,6 +91,8 @@ export async function envoyerConfirmationReservation(reservation: Reservation, p
     dateReservation: new Date(),
     periode,
     montant: reservation.montant || 0,
+    extras: reservation.extras,
+    nombrePersonnes: reservation.nombrePersonnes,
     payeEnLigne,
     logoBuffer,
   });
