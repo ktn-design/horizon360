@@ -17,6 +17,16 @@ export interface Hotspot360 {
   panoramaCible: string;
 }
 
+// Extra payant propose par un hotel ou une salle (petit-dejeuner, kayak, traiteur...).
+export type FacturationExtra = "forfait" | "par_nuit" | "par_personne" | "par_personne_par_nuit";
+
+export interface Extra {
+  id: string;
+  nom: string;
+  prix: number;
+  facturation: FacturationExtra;
+}
+
 export interface Panorama360 {
   id: string;
   nom: string;
@@ -71,6 +81,7 @@ export interface Hotel {
   photos: string[];
   panorama360Url?: string;
   panoramas?: Panorama360[];
+  extras?: Extra[];
   contact: {
     whatsapp: string;
     telephone: string;
@@ -97,6 +108,7 @@ export interface Salle {
   photos: string[];
   panorama360Url?: string;
   panoramas?: Panorama360[];
+  extras?: Extra[];
   contact: {
     whatsapp: string;
     telephone: string;

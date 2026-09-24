@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { Maison, Hotel, Salle, ParametresSite, Societe, Immeuble, Panorama360 } from "@/types";
+import { ExtraChoisi } from "./prix";
 
 function maisonVersDb(m: Maison) {
   return {
@@ -109,6 +110,7 @@ function hotelVersDb(h: Hotel) {
     photos: h.photos,
     panorama_360_url: h.panorama360Url || null,
     panoramas: h.panoramas || [],
+    extras: h.extras || [],
     whatsapp: h.contact.whatsapp,
     telephone: h.contact.telephone,
   };
@@ -134,6 +136,7 @@ function dbVersHotel(d: any): Hotel {
     photos: d.photos || [],
     panorama360Url: d.panorama_360_url || undefined,
     panoramas: d.panoramas || [],
+    extras: d.extras || [],
     contact: { whatsapp: d.whatsapp, telephone: d.telephone },
   };
 }
@@ -183,6 +186,7 @@ function salleVersDb(s: Salle) {
     photos: s.photos,
     panorama_360_url: s.panorama360Url || null,
     panoramas: s.panoramas || [],
+    extras: s.extras || [],
     whatsapp: s.contact.whatsapp,
     telephone: s.contact.telephone,
   };
@@ -209,6 +213,7 @@ function dbVersSalle(d: any): Salle {
     photos: d.photos || [],
     panorama360Url: d.panorama_360_url || undefined,
     panoramas: d.panoramas || [],
+    extras: d.extras || [],
     contact: { whatsapp: d.whatsapp, telephone: d.telephone },
   };
 }
@@ -431,6 +436,8 @@ export interface Reservation {
   message: string;
   montant?: number;
   stripeSessionId?: string;
+  extras?: ExtraChoisi[];
+  nombrePersonnes?: number;
 }
 
 function reservationVersDb(r: Omit<Reservation, "id" | "statut">, statut: Reservation["statut"] = "en_attente") {
@@ -449,6 +456,8 @@ function reservationVersDb(r: Omit<Reservation, "id" | "statut">, statut: Reserv
     message: r.message,
     montant: r.montant ?? null,
     stripe_session_id: r.stripeSessionId || null,
+    extras: r.extras || [],
+    nombre_personnes: r.nombrePersonnes ?? null,
   };
 }
 
@@ -468,6 +477,8 @@ function dbVersReservation(d: any): Reservation {
     message: d.message,
     montant: d.montant != null ? Number(d.montant) : undefined,
     stripeSessionId: d.stripe_session_id || undefined,
+    extras: d.extras || [],
+    nombrePersonnes: d.nombre_personnes ?? undefined,
   };
 }
 

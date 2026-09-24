@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripeServeur";
 import { getHotelParId, getSalleParId, getChambreParId, getReservationsParBien } from "@/lib/store";
 import { periodeHotelDisponible, creneauSalleDisponible } from "@/lib/disponibilite";
-
-function nbNuits(dateDebut: string, dateFin: string): number {
-  const debut = new Date(dateDebut);
-  const fin = new Date(dateFin);
-  return Math.round((fin.getTime() - debut.getTime()) / (1000 * 60 * 60 * 24));
-}
+import { calculerExtras, extraParPersonne, lireExtrasIds, lireNombrePersonnes, nombreNuits, ExtraChoisi } from "@/lib/prix";
 
 export async function POST(request: Request) {
   try {
@@ -20,6 +15,9 @@ export async function POST(request: Request) {
 
     let montant = 0;
     let nomLigne = "";
+    let lignesExtras: ExtraChoisi[] = [];
+    const extrasIds = lireExtrasIds(body.extrasIds);
+    const nombrePersonnes = lireNombrePersonnes(body.nombrePersonnes);
 
     if (typeBien === "hotel") {
       const hotel = await getHotelParId(bienId);
@@ -28,12 +26,13 @@ export async function POST(request: Request) {
       if (dateFin <= dateDebut) {
         return NextResponse.json({ erreur: "La date de depart doit etre apres la date d'arrivee." }, { status: 400 });
       }
-      const nuits = nbNuits(dateDebut, dateFin);
+      const nuits = nombreNuits(dateDebut, dateFin);
 
       const chambre = chambreId ? await getChambreParId(chambreId) : undefined;
       const prixNuit = chambre ? chambre.prixParNuit : hotel.prixParNuit;
       montant = nuits * prixNuit;
       nomLigne = chambre ? hotel.titre + " - " + chambre.nom : hotel.titre;
+      lignesExtras = calculerExtras(hotel.extras || [], extrasIds, nuits, nombrePersonnes).lignes;
 
       const reservationsExistantes = await getReservationsParBien(bienId);
       if (!periodeHotelDisponible(reservationsExistantes, chambreId || undefined, dateDebut, dateFin)) {
@@ -46,6 +45,7 @@ export async function POST(request: Request) {
 
       montant = salle.prix;
       nomLigne = salle.titre;
+      lignesExtras = calculerExtras(salle.extras || [], extrasIds, 1, nombrePersonnes).lignes;
 
       const reservationsExistantes = await getReservationsParBien(bienId);
       if (!creneauSalleDisponible(reservationsExistantes, dateDebut, creneau)) {
@@ -59,6 +59,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ erreur: "Montant invalide." }, { status: 400 });
     }
 
+    const montantBien = montant;
+    montant += lignesExtras.reduce((somme, l) => somme + l.total, 0);
+
     const origine = new URL(request.url).origin;
     const retourAnnulation = typeBien === "hotel" ? "/hotels/" + bienId : "/salles/" + bienId;
 
@@ -71,10 +74,18 @@ export async function POST(request: Request) {
           price_data: {
             currency: "usd",
             product_data: { name: nomLigne },
-            unit_amount: Math.round(montant * 100),
+            unit_amount: Math.round(montantBien * 100),
           },
           quantity: 1,
         },
+        ...lignesExtras.map((l) => ({
+          price_data: {
+            currency: "usd",
+            product_data: { name: l.nom },
+            unit_amount: Math.round(l.prix * 100),
+          },
+          quantity: l.quantite,
+        })),
       ],
       metadata: {
         typeBien,
@@ -88,6 +99,8 @@ export async function POST(request: Request) {
         creneau: creneau || "",
         message: message || "",
         montant: String(montant),
+        extrasIds: lignesExtras.map((l) => l.id).join(","),
+        nombrePersonnes: lignesExtras.some(extraParPersonne) ? String(nombrePersonnes) : "",
       },
       success_url: origine + "/reservation/confirmation?session_id={CHECKOUT_SESSION_ID}",
       cancel_url: origine + retourAnnulation,

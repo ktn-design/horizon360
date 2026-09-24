@@ -93,6 +93,9 @@ export default function MonComptePage() {
               {r.nomChambre ? " — " + r.nomChambre : ""}
             </p>
             <p className="mt-2 text-sm text-slate-300">{texteCreneauPeriode(r)}</p>
+            {r.extras && r.extras.length > 0 && (
+              <p className="mt-1 text-sm text-slate-400">+ {r.extras.map((e) => e.nom).join(", ")}</p>
+            )}
             {r.montant != null && (
               <p className="mt-1 text-sm font-semibold text-emerald-400">{r.montant.toLocaleString("fr-CA")} $</p>
             )}

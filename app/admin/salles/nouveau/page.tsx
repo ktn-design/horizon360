@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { sauvegarderSalle } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
 import SelectPays from "@/components/SelectPays";
-import { Salle, TypeEvenement } from "@/types";
+import { Extra, Salle, TypeEvenement } from "@/types";
+import EditeurExtras from "@/components/EditeurExtras";
 
 const evenementsListe: { valeur: TypeEvenement; label: string }[] = [
   { valeur: "mariage", label: "Mariage" },
@@ -20,6 +21,7 @@ const evenementsListe: { valeur: TypeEvenement; label: string }[] = [
 export default function NouvelleSallePage() {
   const router = useRouter();
   const [photos, setPhotos] = useState<string[]>([]);
+  const [extras, setExtras] = useState<Extra[]>([]);
   const [evenements, setEvenements] = useState<TypeEvenement[]>([]);
   const [enCours, setEnCours] = useState(false);
 
@@ -102,6 +104,7 @@ export default function NouvelleSallePage() {
       wifi: form.wifi,
       visiteVirtuelle: form.visiteVirtuelle,
       photos: photos,
+      extras: extras.filter((e) => e.nom.trim() !== ""),
       contact: {
         whatsapp: form.whatsapp,
         telephone: form.telephone,
@@ -206,6 +209,8 @@ export default function NouvelleSallePage() {
             </div>
           )}
         </div>
+
+        <EditeurExtras type="salle" extras={extras} onChange={setExtras} />
 
         <div className="grid grid-cols-2 gap-4">
           <Champ label="WhatsApp (avec indicatif, sans +)">

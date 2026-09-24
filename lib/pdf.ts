@@ -14,6 +14,8 @@ export interface DonneesPdfConfirmation {
   dateReservation: Date;
   periode: string;
   montant: number;
+  extras?: { nom: string; quantite: number; total: number }[];
+  nombrePersonnes?: number;
   payeEnLigne: boolean;
   logoBuffer?: Buffer;
 }
@@ -119,6 +121,18 @@ export async function genererPdfConfirmation(d: DonneesPdfConfirmation): Promise
         d.dateReservation.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })
     );
     doc.text(d.periode);
+    if (d.nombrePersonnes) doc.text("Nombre de personnes : " + d.nombrePersonnes);
+
+    // Extras choisis par le client
+    if (d.extras && d.extras.length > 0) {
+      ligneSection(doc, "Extras");
+      for (const extra of d.extras) {
+        const y = doc.y;
+        doc.text(extra.nom + (extra.quantite > 1 ? " x " + extra.quantite : ""), 50, y, { width: 380 });
+        doc.text(extra.total.toLocaleString("fr-CA") + " $", 430, y, { width: 115, align: "right" });
+        doc.x = 50;
+      }
+    }
 
     // Paiement
     ligneSection(doc, "Paiement");

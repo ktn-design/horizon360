@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { sauvegarderHotel } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
 import SelectPays from "@/components/SelectPays";
-import { Hotel } from "@/types";
+import { Extra, Hotel } from "@/types";
+import EditeurExtras from "@/components/EditeurExtras";
 
 export default function NouvelHotelPage() {
   const router = useRouter();
   const [photos, setPhotos] = useState<string[]>([]);
+  const [extras, setExtras] = useState<Extra[]>([]);
   const [enCours, setEnCours] = useState(false);
 
   const [form, setForm] = useState({
@@ -82,6 +84,7 @@ export default function NouvelHotelPage() {
       climatisation: form.climatisation,
       visiteVirtuelle: form.visiteVirtuelle,
       photos: photos,
+      extras: extras.filter((e) => e.nom.trim() !== ""),
       contact: {
         whatsapp: form.whatsapp,
         telephone: form.telephone,
@@ -163,6 +166,8 @@ export default function NouvelHotelPage() {
             </div>
           )}
         </div>
+
+        <EditeurExtras type="hotel" extras={extras} onChange={setExtras} />
 
         <div className="grid grid-cols-2 gap-4">
           <Champ label="WhatsApp (avec indicatif, sans +)">

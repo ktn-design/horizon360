@@ -6,6 +6,9 @@ import { useAuth } from "@/lib/AuthContext";
 import { useLanguage } from "@/lib/LanguageContext";
 import { periodeHotelDisponible } from "@/lib/disponibilite";
 import ModalConnexion from "./ModalConnexion";
+import ChoixExtras from "./ChoixExtras";
+import { Extra } from "@/types";
+import { calculerExtras, extraParPersonne } from "@/lib/prix";
 
 interface ReservationHotelProps {
   hotelId: string;
@@ -28,6 +31,9 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
   const [chambres, setChambres] = useState<ChambreHotel[]>([]);
   const [chambreId, setChambreId] = useState(chambreIdFixe || "");
   const [prixParNuitHotel, setPrixParNuitHotel] = useState(0);
+  const [extrasHotel, setExtrasHotel] = useState<Extra[]>([]);
+  const [extrasIds, setExtrasIds] = useState<string[]>([]);
+  const [nombrePersonnes, setNombrePersonnes] = useState(1);
   const [modePaiement, setModePaiement] = useState<"carte" | "sur_place">("carte");
   const [envoye, setEnvoye] = useState(false);
   const [enCours, setEnCours] = useState(false);
@@ -36,10 +42,15 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
   useEffect(() => {
     async function charger() {
       if (chambreIdFixe) {
-        const [res, chambre] = await Promise.all([getReservationsParBien(hotelId), getChambreParId(chambreIdFixe)]);
+        const [res, chambre, hotel] = await Promise.all([
+          getReservationsParBien(hotelId),
+          getChambreParId(chambreIdFixe),
+          getHotelParId(hotelId),
+        ]);
         setReservationsExistantes(res);
         setChambres(chambre ? [chambre] : []);
         setChambreId(chambreIdFixe);
+        setExtrasHotel(hotel?.extras || []);
         return;
       }
       const [res, chs, hotel] = await Promise.all([
@@ -50,6 +61,7 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
       setReservationsExistantes(res);
       setChambres(chs.filter((c) => c.statut === "disponible"));
       setPrixParNuitHotel(hotel?.prixParNuit || 0);
+      setExtrasHotel(hotel?.extras || []);
     }
     charger();
   }, [hotelId, chambreIdFixe]);
@@ -76,6 +88,8 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
       if (d.message) setMessage(d.message);
       if (d.chambreId && !chambreIdFixe) setChambreId(d.chambreId);
       if (d.modePaiement) setModePaiement(d.modePaiement);
+      if (Array.isArray(d.extrasIds)) setExtrasIds(d.extrasIds);
+      if (d.nombrePersonnes) setNombrePersonnes(d.nombrePersonnes);
     } catch {
       // sessionStorage indisponible ou donnees corrompues : pas grave, on repart d'un formulaire vide
     }
@@ -86,12 +100,12 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
     try {
       sessionStorage.setItem(
         cleSauvegarde,
-        JSON.stringify({ dateArrivee, dateDepart, nom, telephone, message, chambreId, modePaiement })
+        JSON.stringify({ dateArrivee, dateDepart, nom, telephone, message, chambreId, modePaiement, extrasIds, nombrePersonnes })
       );
     } catch {
       // pas grave si sessionStorage n'est pas disponible (navigation privee, etc.)
     }
-  }, [cleSauvegarde, dateArrivee, dateDepart, nom, telephone, message, chambreId, modePaiement]);
+  }, [cleSauvegarde, dateArrivee, dateDepart, nom, telephone, message, chambreId, modePaiement, extrasIds, nombrePersonnes]);
 
   const chambreSelectionnee = chambres.find((c) => c.id === chambreId);
   const prixParNuit = chambreSelectionnee ? chambreSelectionnee.prixParNuit : prixParNuitHotel;
@@ -99,7 +113,10 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
     dateArrivee && dateDepart && dateDepart > dateArrivee
       ? Math.round((new Date(dateDepart).getTime() - new Date(dateArrivee).getTime()) / (1000 * 60 * 60 * 24))
       : 0;
-  const montant = nuits * prixParNuit;
+  const montantHebergement = nuits * prixParNuit;
+  const { lignes: lignesExtras, total: totalExtras } = calculerExtras(extrasHotel, extrasIds, nuits, nombrePersonnes);
+  const montant = montantHebergement + totalExtras;
+  const nombrePersonnesUtile = lignesExtras.some(extraParPersonne) ? nombrePersonnes : undefined;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -146,6 +163,8 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
             dateDebut: dateArrivee,
             dateFin: dateDepart,
             message,
+            extrasIds: lignesExtras.map((l) => l.id),
+            nombrePersonnes: nombrePersonnesUtile,
           }),
         });
         const data = await reponse.json();
@@ -173,6 +192,8 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
         dateFin: dateDepart,
         message,
         montant,
+        extras: lignesExtras,
+        nombrePersonnes: nombrePersonnesUtile,
       });
       setEnvoye(true);
       try {
@@ -262,6 +283,17 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
           <label className="mb-1 block text-sm text-slate-300">{t("resa_message_optionnel")}</label>
           <textarea value={message} onChange={(e) => setMessage(e.target.value)} className="input min-h-20" />
         </div>
+
+        <ChoixExtras
+          extras={extrasHotel}
+          idsChoisis={extrasIds}
+          onChangeIds={setExtrasIds}
+          nombrePersonnes={nombrePersonnes}
+          onChangeNombrePersonnes={setNombrePersonnes}
+          libellePrincipal={t("resa_hebergement") + (nuits > 0 ? " (" + nuits + " × " + prixParNuit.toLocaleString("fr-CA") + " $)" : "")}
+          montantPrincipal={montantHebergement}
+          lignesExtras={lignesExtras}
+        />
 
         <div>
           <label className="mb-2 block text-sm text-slate-300">{t("resa_mode_paiement")}</label>

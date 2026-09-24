@@ -6,6 +6,9 @@ import { useAuth } from "@/lib/AuthContext";
 import { useLanguage } from "@/lib/LanguageContext";
 import { creneauSalleDisponible } from "@/lib/disponibilite";
 import ModalConnexion from "./ModalConnexion";
+import ChoixExtras from "./ChoixExtras";
+import { Extra } from "@/types";
+import { calculerExtras, extraParPersonne } from "@/lib/prix";
 
 interface ReservationSalleProps {
   salleId: string;
@@ -23,6 +26,9 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
   const [message, setMessage] = useState("");
   const [reservationsExistantes, setReservationsExistantes] = useState<Reservation[]>([]);
   const [prixSalle, setPrixSalle] = useState(0);
+  const [extrasSalle, setExtrasSalle] = useState<Extra[]>([]);
+  const [extrasIds, setExtrasIds] = useState<string[]>([]);
+  const [nombrePersonnes, setNombrePersonnes] = useState(1);
   const [modePaiement, setModePaiement] = useState<"carte" | "sur_place">("carte");
   const [envoye, setEnvoye] = useState(false);
   const [enCours, setEnCours] = useState(false);
@@ -33,6 +39,7 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
       const [res, salle] = await Promise.all([getReservationsParBien(salleId), getSalleParId(salleId)]);
       setReservationsExistantes(res);
       setPrixSalle(salle?.prix || 0);
+      setExtrasSalle(salle?.extras || []);
     }
     charger();
   }, [salleId]);
@@ -58,6 +65,8 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
       if (d.telephone) setTelephone(d.telephone);
       if (d.message) setMessage(d.message);
       if (d.modePaiement) setModePaiement(d.modePaiement);
+      if (Array.isArray(d.extrasIds)) setExtrasIds(d.extrasIds);
+      if (d.nombrePersonnes) setNombrePersonnes(d.nombrePersonnes);
     } catch {
       // sessionStorage indisponible ou donnees corrompues : pas grave, on repart d'un formulaire vide
     }
@@ -66,11 +75,16 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
 
   useEffect(() => {
     try {
-      sessionStorage.setItem(cleSauvegarde, JSON.stringify({ date, creneau, nom, telephone, message, modePaiement }));
+      sessionStorage.setItem(cleSauvegarde, JSON.stringify({ date, creneau, nom, telephone, message, modePaiement, extrasIds, nombrePersonnes }));
     } catch {
       // pas grave si sessionStorage n'est pas disponible (navigation privee, etc.)
     }
-  }, [cleSauvegarde, date, creneau, nom, telephone, message, modePaiement]);
+  }, [cleSauvegarde, date, creneau, nom, telephone, message, modePaiement, extrasIds, nombrePersonnes]);
+
+  // Une salle se reserve pour une journee : nuits = 1 dans le calcul des extras.
+  const { lignes: lignesExtras, total: totalExtras } = calculerExtras(extrasSalle, extrasIds, 1, nombrePersonnes);
+  const montant = prixSalle + totalExtras;
+  const nombrePersonnesUtile = lignesExtras.some(extraParPersonne) ? nombrePersonnes : undefined;
 
   const creneauxPrisPourDate = reservationsExistantes.filter((r) => r.dateDebut === date).map((r) => r.creneau);
   const journeeIndisponible = creneauxPrisPourDate.includes("journee");
@@ -126,6 +140,8 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
             dateFin: date,
             creneau,
             message,
+            extrasIds: lignesExtras.map((l) => l.id),
+            nombrePersonnes: nombrePersonnesUtile,
           }),
         });
         const data = await reponse.json();
@@ -152,7 +168,9 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
         dateFin: date,
         creneau,
         message,
-        montant: prixSalle,
+        montant,
+        extras: lignesExtras,
+        nombrePersonnes: nombrePersonnesUtile,
       });
       setEnvoye(true);
       try {
@@ -236,6 +254,17 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
           <textarea value={message} onChange={(e) => setMessage(e.target.value)} className="input min-h-20" />
         </div>
 
+        <ChoixExtras
+          extras={extrasSalle}
+          idsChoisis={extrasIds}
+          onChangeIds={setExtrasIds}
+          nombrePersonnes={nombrePersonnes}
+          onChangeNombrePersonnes={setNombrePersonnes}
+          libellePrincipal={t("resa_location_salle")}
+          montantPrincipal={prixSalle}
+          lignesExtras={lignesExtras}
+        />
+
         <div>
           <label className="mb-2 block text-sm text-slate-300">{t("resa_mode_paiement")}</label>
           <div className="space-y-2">
@@ -250,9 +279,9 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
           </div>
         </div>
 
-        {prixSalle > 0 && (
+        {montant > 0 && (
           <p className="text-sm text-slate-300">
-            {t("resa_prix_total")} : <span className="font-bold text-emerald-400">{prixSalle.toLocaleString("fr-CA")} $</span>
+            {t("resa_prix_total")} : <span className="font-bold text-emerald-400">{montant.toLocaleString("fr-CA")} $</span>
           </p>
         )}
 

@@ -117,6 +117,13 @@ export default function ReservationsAdminPage() {
               Du {r.dateDebut} au {r.dateFin}
               {r.creneau && " - Creneau: " + (r.creneau === "matin" ? "Matin" : r.creneau === "apres_midi" ? "Apres-midi" : "Journee complete")}
             </p>
+            {r.nombrePersonnes && <p className="mt-1 text-sm text-slate-300">{r.nombrePersonnes} personne(s)</p>}
+            {r.extras && r.extras.length > 0 && (
+              <p className="mt-1 text-sm text-slate-300">
+                Extras : {r.extras.map((e) => e.nom + (e.quantite > 1 ? " x" + e.quantite : "") + " (" + e.total.toLocaleString("fr-CA") + " $)").join(", ")}
+              </p>
+            )}
+            {r.montant != null && <p className="mt-1 text-sm font-semibold text-emerald-400">Total : {r.montant.toLocaleString("fr-CA")} $</p>}
             {r.message && <p className="mt-2 text-sm text-slate-400">Message : {r.message}</p>}
             <p className="mt-2 text-xs text-slate-500">ID du bien : {r.bienId}</p>
           </div>

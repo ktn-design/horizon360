@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getHotelParId, sauvegarderHotel, supprimerHotel } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
-import { Hotel } from "@/types";
+import { Extra, Hotel } from "@/types";
+import EditeurExtras from "@/components/EditeurExtras";
 
 export default function ModifierHotelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [charge, setCharge] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [extras, setExtras] = useState<Extra[]>([]);
   const [enCours, setEnCours] = useState(false);
   const [hotelExistant, setHotelExistant] = useState<Hotel | null>(null);
 
@@ -46,6 +48,7 @@ export default function ModifierHotelPage({ params }: { params: Promise<{ id: st
       const hotel = await getHotelParId(id);
       if (hotel) {
         setHotelExistant(hotel);
+        setExtras(hotel.extras || []);
         setForm({
           titre: hotel.titre,
           description: hotel.description,
@@ -124,6 +127,7 @@ export default function ModifierHotelPage({ params }: { params: Promise<{ id: st
       photos: photos,
       panorama360Url: hotelExistant?.panorama360Url,
       panoramas: hotelExistant?.panoramas,
+      extras: extras.filter((e) => e.nom.trim() !== ""),
       contact: {
         whatsapp: form.whatsapp,
         telephone: form.telephone,
@@ -223,6 +227,8 @@ export default function ModifierHotelPage({ params }: { params: Promise<{ id: st
             </div>
           )}
         </div>
+
+        <EditeurExtras type="hotel" extras={extras} onChange={setExtras} />
 
         <div className="grid grid-cols-2 gap-4">
           <Champ label="WhatsApp (avec indicatif, sans +)">

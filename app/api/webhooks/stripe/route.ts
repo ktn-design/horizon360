@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripeServeur";
-import { creerReservationPayee, getReservationsParBien, getReservationParStripeSessionId } from "@/lib/store";
+import { creerReservationPayee, getReservationsParBien, getReservationParStripeSessionId, getHotelParId, getSalleParId } from "@/lib/store";
+import { calculerExtras, lireNombrePersonnes, nombreNuits, ExtraChoisi } from "@/lib/prix";
 import { periodeHotelDisponible, creneauSalleDisponible } from "@/lib/disponibilite";
 import { envoyerConfirmationReservation } from "@/lib/confirmation";
 
@@ -54,6 +55,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ recu: true, rembourse: true });
   }
 
+  // Detail des extras payes, recalcule avec les tarifs de l'admin (le montant paye, lui,
+  // vient de la session Stripe via m.montant).
+  const extrasIds = (m.extrasIds || "").split(",").filter(Boolean);
+  const nombrePersonnes = m.nombrePersonnes ? lireNombrePersonnes(m.nombrePersonnes) : undefined;
+  let extras: ExtraChoisi[] | undefined;
+  if (extrasIds.length > 0) {
+    const bien = typeBien === "hotel" ? await getHotelParId(bienId) : await getSalleParId(bienId);
+    const nuits = typeBien === "hotel" ? nombreNuits(dateDebut, dateFin) : 1;
+    extras = calculerExtras(bien?.extras || [], extrasIds, nuits, nombrePersonnes || 1).lignes;
+  }
+
   try {
     await creerReservationPayee({
       typeBien,
@@ -68,6 +80,8 @@ export async function POST(request: Request) {
       message: m.message || "",
       montant,
       stripeSessionId: session.id,
+      extras,
+      nombrePersonnes,
     });
   } catch (err) {
     // Deux webhooks arrives en meme temps (rare) : la contrainte unique en base a bloque le doublon, ce n'est pas une erreur.

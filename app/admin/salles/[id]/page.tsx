@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { getSalleParId, sauvegarderSalle, supprimerSalle } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
 import SelectPays from "@/components/SelectPays";
-import { Salle, TypeEvenement } from "@/types";
+import { Extra, Salle, TypeEvenement } from "@/types";
+import EditeurExtras from "@/components/EditeurExtras";
 
 const evenementsListe: { valeur: TypeEvenement; label: string }[] = [
   { valeur: "mariage", label: "Mariage" },
@@ -22,6 +23,7 @@ export default function ModifierSallePage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const [charge, setCharge] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [extras, setExtras] = useState<Extra[]>([]);
   const [evenements, setEvenements] = useState<TypeEvenement[]>([]);
   const [enCours, setEnCours] = useState(false);
   const [salleExistante, setSalleExistante] = useState<Salle | null>(null);
@@ -58,6 +60,7 @@ export default function ModifierSallePage({ params }: { params: Promise<{ id: st
       const salle = await getSalleParId(id);
       if (salle) {
         setSalleExistante(salle);
+        setExtras(salle.extras || []);
         setForm({
           titre: salle.titre,
           description: salle.description,
@@ -146,6 +149,7 @@ export default function ModifierSallePage({ params }: { params: Promise<{ id: st
       photos: photos,
       panorama360Url: salleExistante?.panorama360Url,
       panoramas: salleExistante?.panoramas,
+      extras: extras.filter((e) => e.nom.trim() !== ""),
       contact: {
         whatsapp: form.whatsapp,
         telephone: form.telephone,
@@ -267,6 +271,8 @@ export default function ModifierSallePage({ params }: { params: Promise<{ id: st
             </div>
           )}
         </div>
+
+        <EditeurExtras type="salle" extras={extras} onChange={setExtras} />
 
         <div className="grid grid-cols-2 gap-4">
           <Champ label="WhatsApp (avec indicatif, sans +)">
