@@ -7,6 +7,7 @@ import { TypeEvenement, Salle, ParametresSite } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import Diaporama from "@/components/Diaporama";
 import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
+import { plafondPrix } from "@/lib/prix";
 
 export default function SallesPage() {
   const { t } = useLanguage();
@@ -25,7 +26,7 @@ export default function SallesPage() {
   const [salles, setSalles] = useState<Salle[]>([]);
   const [evenementFiltre, setEvenementFiltre] = useState<string>("tous");
   const [capaciteMin, setCapaciteMin] = useState<number>(0);
-  const [prixMax, setPrixMax] = useState<number>(10000);
+  const [prixMax, setPrixMax] = useState<number | null>(null);
   const [prixMinIA, setPrixMinIA] = useState<number>(0);
   const [charge, setCharge] = useState(false);
   const [rechercheIA, setRechercheIA] = useState("");
@@ -77,13 +78,16 @@ export default function SallesPage() {
     setEnCoursIA(false);
   }
 
+  // Le curseur va jusqu'au prix le plus eleve du catalogue ; tout a droite = aucun plafond.
+  const plafond = plafondPrix(salles.map((b) => b.prix), 100);
+
   const sallesFiltrees = salles.filter((salle) => {
     const matchEvenement =
       evenementFiltre === "tous" ||
       salle.evenementsAcceptes.includes(evenementFiltre as TypeEvenement) ||
       salle.evenementsAcceptes.includes("polyvalente");
     const matchCapacite = salle.capacite >= capaciteMin;
-    const matchPrix = salle.prix <= prixMax && salle.prix >= prixMinIA;
+    const matchPrix = (prixMax === null || salle.prix <= prixMax) && salle.prix >= prixMinIA;
     const matchVille = filtreVille === "" || salle.localisation.ville.toLowerCase().includes(filtreVille.toLowerCase());
     return matchEvenement && matchCapacite && matchPrix && matchVille;
   });
@@ -164,15 +168,15 @@ export default function SallesPage() {
 
         <div>
           <label className="mb-1 block text-sm text-slate-300">
-            {t("salles_prix_max")} : {prixMax.toLocaleString("fr-CA")} $
+            {t("salles_prix_max")} : {(prixMax ?? plafond).toLocaleString("fr-CA")} $
           </label>
           <input
             type="range"
             min="0"
-            max="10000"
+            max={plafond}
             step="100"
-            value={prixMax}
-            onChange={(e) => setPrixMax(Number(e.target.value))}
+            value={prixMax ?? plafond}
+            onChange={(e) => setPrixMax(Number(e.target.value) >= plafond ? null : Number(e.target.value))}
             className="w-48"
           />
         </div>

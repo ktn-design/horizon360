@@ -7,13 +7,14 @@ import { ParametresSite, Hotel } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import Diaporama from "@/components/Diaporama";
 import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
+import { plafondPrix } from "@/lib/prix";
 
 export default function HotelsPage() {
   const { t } = useLanguage();
   useEnregistrerVisite("hotels");
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [etoilesMin, setEtoilesMin] = useState<number>(0);
-  const [prixMax, setPrixMax] = useState<number>(1000);
+  const [prixMax, setPrixMax] = useState<number | null>(null);
   const [prixMinIA, setPrixMinIA] = useState<number>(0);
   const [wifiSeulement, setWifiSeulement] = useState<boolean>(false);
   const [piscineSeulement, setPiscineSeulement] = useState<boolean>(false);
@@ -67,9 +68,12 @@ export default function HotelsPage() {
     setEnCoursIA(false);
   }
 
+  // Le curseur va jusqu'au prix le plus eleve du catalogue ; tout a droite = aucun plafond.
+  const plafond = plafondPrix(hotels.map((b) => b.prixParNuit), 10);
+
   const hotelsFiltres = hotels.filter((hotel) => {
     const matchEtoiles = hotel.etoiles >= etoilesMin;
-    const matchPrix = hotel.prixParNuit <= prixMax && hotel.prixParNuit >= prixMinIA;
+    const matchPrix = (prixMax === null || hotel.prixParNuit <= prixMax) && hotel.prixParNuit >= prixMinIA;
     const matchWifi = !wifiSeulement || hotel.wifi;
     const matchPiscine = !piscineSeulement || hotel.piscine;
     const matchVille = filtreVille === "" || hotel.localisation.ville.toLowerCase().includes(filtreVille.toLowerCase());
@@ -145,15 +149,15 @@ export default function HotelsPage() {
 
         <div>
           <label className="mb-1 block text-sm text-slate-300">
-            {t("hotels_prix_nuit")} : {prixMax.toLocaleString("fr-CA")} $
+            {t("hotels_prix_nuit")} : {(prixMax ?? plafond).toLocaleString("fr-CA")} $
           </label>
           <input
             type="range"
             min="0"
-            max="1000"
+            max={plafond}
             step="10"
-            value={prixMax}
-            onChange={(e) => setPrixMax(Number(e.target.value))}
+            value={prixMax ?? plafond}
+            onChange={(e) => setPrixMax(Number(e.target.value) >= plafond ? null : Number(e.target.value))}
             className="w-48"
           />
         </div>
