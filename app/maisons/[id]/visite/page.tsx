@@ -35,10 +35,10 @@ export default function VisitePage({ params }: { params: Promise<{ id: string }>
   const hotspotsActuels = panoramaActif ? panoramaActif.hotspots : [];
 
   return (
-    <main className="relative h-screen w-screen bg-black">
+    <main className="fixed inset-0 z-50 h-dvh w-full overflow-hidden bg-black">
       <Link
         href={"/maisons/" + maison.id}
-        className="absolute left-4 top-4 z-10 rounded-lg bg-slate-900/80 px-4 py-2 text-white hover:bg-slate-800"
+        className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))] z-20 rounded-full border border-white/20 bg-slate-900/50 px-4 py-2 text-sm font-semibold text-white backdrop-blur-md hover:bg-slate-900/70"
       >
         Quitter la visite
       </Link>
@@ -46,6 +46,7 @@ export default function VisitePage({ params }: { params: Promise<{ id: string }>
       <VisiteVirtuelle
         panoramaUrl={panoramaActuel}
         hotspots={hotspotsActuels}
+        panoramas={panoramas}
         onChangerPanorama={setPanoramaActuel}
       />
     </main>
