@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getHotelParId, sauvegarderChambre, ChambreHotel, TypeLit } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
+import { texteErreur } from "@/lib/erreurs";
+import EditeurExtras from "@/components/EditeurExtras";
+import { Extra } from "@/types";
 
 export default function NouvelleChambrePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: hotelId } = use(params);
@@ -12,6 +15,9 @@ export default function NouvelleChambrePage({ params }: { params: Promise<{ id: 
   const [nomHotel, setNomHotel] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [enCours, setEnCours] = useState(false);
+  const [extras, setExtras] = useState<Extra[]>([]);
+  const [erreur, setErreur] = useState("");
+  const [enregistrement, setEnregistrement] = useState(false);
 
   const [form, setForm] = useState({
     nom: "",
@@ -28,11 +34,6 @@ export default function NouvelleChambrePage({ params }: { params: Promise<{ id: 
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const h = await getHotelParId(hotelId);
       setNomHotel(h ? h.titre : "Hotel");
     }
@@ -47,17 +48,21 @@ export default function NouvelleChambrePage({ params }: { params: Promise<{ id: 
     const fichiers = e.target.files;
     if (!fichiers) return;
     setEnCours(true);
+    setErreur("");
     const nouvelles: string[] = [];
+    const echecs: string[] = [];
     for (let i = 0; i < fichiers.length; i++) {
       try {
         const url = await uploaderPhoto(fichiers[i]);
         nouvelles.push(url);
       } catch (err) {
-        alert("Erreur lors de l'envoi d'une photo.");
+        echecs.push(texteErreur(err));
       }
     }
     setPhotos((prev) => [...prev, ...nouvelles]);
+    if (echecs.length > 0) setErreur(echecs.join("\n"));
     setEnCours(false);
+    e.target.value = "";
   }
 
   function supprimerPhotoLocale(index: number) {
@@ -66,6 +71,13 @@ export default function NouvelleChambrePage({ params }: { params: Promise<{ id: 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setErreur("");
+
+    const probleme = verifierFormulaire();
+    if (probleme) {
+      setErreur(probleme);
+      return;
+    }
 
     const nouvelleChambre: ChambreHotel = {
       id: Date.now().toString(),
@@ -81,14 +93,32 @@ export default function NouvelleChambrePage({ params }: { params: Promise<{ id: 
       estSuite: form.estSuite,
       sallesDeBain: Number(form.sallesDeBain),
       climatisation: form.climatisation,
+      extras: extras.map((x) => ({ ...x, nom: x.nom.trim(), prix: Number(x.prix) || 0 })).filter((x) => x.nom !== ""),
     };
 
+    setEnregistrement(true);
     try {
       await sauvegarderChambre(nouvelleChambre);
       router.push("/admin/dashboard");
     } catch (err) {
-      alert("Erreur lors de l'enregistrement.");
+      setErreur(texteErreur(err));
+      setEnregistrement(false);
     }
+  }
+
+  // Controles avant envoi, avec un message precis pour chaque probleme.
+  function verifierFormulaire(): string {
+    if (enCours) return "Patientez : les photos sont encore en cours d'envoi.";
+    if (!form.nom.trim()) return "Indiquez le nom de la chambre.";
+    if (!form.description.trim()) return "Indiquez une description.";
+    if (!(Number(form.prixParNuit) > 0)) return "Le prix par nuit doit etre superieur a 0.";
+    if (!(Number(form.capacite) >= 1)) return "La capacite doit etre d'au moins 1 personne.";
+    if (!(Number(form.sallesDeBain) >= 0)) return "Le nombre de salles de bain ne peut pas etre negatif.";
+    if (photos.length === 0) return "Ajoutez au moins une photo de la chambre.";
+    const sansNom = extras.some((x) => x.prix > 0 && !x.nom.trim());
+    if (sansNom) return "Une option a un prix mais pas de nom : donnez-lui un nom ou supprimez-la.";
+    if (extras.some((x) => Number(x.prix) < 0)) return "Le prix d'une option ne peut pas etre negatif.";
+    return "";
   }
 
   return (
@@ -174,7 +204,19 @@ export default function NouvelleChambrePage({ params }: { params: Promise<{ id: 
           )}
         </div>
 
-        <button type="submit" className="rounded-lg bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-700">
+        <EditeurExtras type="chambre" extras={extras} onChange={setExtras} />
+
+        {erreur && (
+          <p role="alert" className="whitespace-pre-line rounded-lg border border-red-500/60 bg-red-500/10 p-4 text-sm text-red-300">
+            {erreur}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={enCours || enregistrement}
+          className="rounded-lg bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-700 disabled:opacity-50"
+        >
           Enregistrer la chambre
         </button>
       </form>

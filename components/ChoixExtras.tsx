@@ -59,7 +59,9 @@ export default function ChoixExtras({
               <span className="flex-1">
                 <span className="block font-medium text-white">{extra.nom}</span>
                 <span className="text-slate-400">
-                  + {formaterPrix(extra.prix)} {t(("extra_" + extra.facturation) as "extra_forfait")}
+                  {extra.prix > 0
+                    ? "+ " + formaterPrix(extra.prix) + " " + t(("extra_" + extra.facturation) as "extra_forfait")
+                    : t("extra_inclus")}
                 </span>
               </span>
             </label>

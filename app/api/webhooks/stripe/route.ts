@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripeServeur";
-import { creerReservationPayee, getReservationsParBien, getReservationParStripeSessionId, getHotelParId, getSalleParId } from "@/lib/store";
+import { creerReservationPayee, getReservationsParBien, getReservationParStripeSessionId, getChambreParId, getSalleParId } from "@/lib/store";
 import { calculerExtras, lireNombrePersonnes, nombreNuits, ExtraChoisi } from "@/lib/prix";
 import { periodeHotelDisponible, creneauSalleDisponible } from "@/lib/disponibilite";
 import { envoyerConfirmationReservation } from "@/lib/confirmation";
@@ -61,7 +61,8 @@ export async function POST(request: Request) {
   const nombrePersonnes = m.nombrePersonnes ? lireNombrePersonnes(m.nombrePersonnes) : undefined;
   let extras: ExtraChoisi[] | undefined;
   if (extrasIds.length > 0) {
-    const bien = typeBien === "hotel" ? await getHotelParId(bienId) : await getSalleParId(bienId);
+    // Hotel : les options sont celles de la chambre reservee.
+    const bien = typeBien === "hotel" ? (chambreId ? await getChambreParId(chambreId) : undefined) : await getSalleParId(bienId);
     const nuits = typeBien === "hotel" ? nombreNuits(dateDebut, dateFin) : 1;
     extras = calculerExtras(bien?.extras || [], extrasIds, nuits, nombrePersonnes || 1).lignes;
   }

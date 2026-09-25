@@ -7,17 +7,13 @@ import { ParametresSite, Hotel } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import Diaporama from "@/components/Diaporama";
 import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
-import { plafondPrix } from "@/lib/prix";
 
 export default function HotelsPage() {
   const { t } = useLanguage();
   useEnregistrerVisite("hotels");
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [etoilesMin, setEtoilesMin] = useState<number>(0);
-  const [prixMax, setPrixMax] = useState<number | null>(null);
-  const [prixMinIA, setPrixMinIA] = useState<number>(0);
   const [wifiSeulement, setWifiSeulement] = useState<boolean>(false);
-  const [piscineSeulement, setPiscineSeulement] = useState<boolean>(false);
   const [parametres, setParametres] = useState<ParametresSite | null>(null);
   const [charge, setCharge] = useState(false);
   const [rechercheIA, setRechercheIA] = useState("");
@@ -50,7 +46,9 @@ export default function HotelsPage() {
       const data = await res.json();
       const c = data.criteres || {};
 
-      const aUnCritere = c.prixMax || c.prixMin || c.ville;
+      // Un hotel n'a pas de prix (on reserve une chambre) : seule la ville sert ici.
+      // La recherche par prix se fait sur la page des chambres.
+      const aUnCritere = c.ville;
 
       if (!aUnCritere) {
         setMessageIA(t("ia_incompris_court"));
@@ -58,8 +56,6 @@ export default function HotelsPage() {
         return;
       }
 
-      if (c.prixMax) setPrixMax(Number(c.prixMax));
-      if (c.prixMin) setPrixMinIA(Number(c.prixMin));
       setFiltreVille(c.ville || "");
     } catch (err) {
       setMessageIA(t("ia_erreur"));
@@ -68,19 +64,14 @@ export default function HotelsPage() {
     setEnCoursIA(false);
   }
 
-  // Le curseur va jusqu'au prix le plus eleve du catalogue ; tout a droite = aucun plafond.
-  const plafond = plafondPrix(hotels.map((b) => b.prixParNuit), 10);
-
   const hotelsFiltres = hotels.filter((hotel) => {
     const matchEtoiles = hotel.etoiles >= etoilesMin;
-    const matchPrix = (prixMax === null || hotel.prixParNuit <= prixMax) && hotel.prixParNuit >= prixMinIA;
     const matchWifi = !wifiSeulement || hotel.wifi;
-    const matchPiscine = !piscineSeulement || hotel.piscine;
     const matchVille = filtreVille === "" || hotel.localisation.ville.toLowerCase().includes(filtreVille.toLowerCase());
-    return matchEtoiles && matchPrix && matchWifi && matchPiscine && matchVille;
+    return matchEtoiles && matchWifi && matchVille;
   });
 
-  const aRechercheActive = filtreVille || prixMinIA > 0;
+  const aRechercheActive = filtreVille !== "";
 
   const styleFond = parametres?.imageHotelsUrl
     ? {
@@ -117,9 +108,9 @@ export default function HotelsPage() {
         {messageIA && (
           <p className="mt-2 text-sm text-yellow-400">{messageIA}</p>
         )}
-        {(filtreVille || prixMinIA > 0) && !messageIA && (
+        {filtreVille && !messageIA && (
           <p className="mt-2 text-xs text-purple-300">
-            {t("ia_filtres_appliques")} {filtreVille && t("ia_ville") + " " + filtreVille + " "} {prixMinIA > 0 && t("ia_prix_min") + " " + prixMinIA.toLocaleString("fr-CA") + "$"}
+            {t("ia_filtres_appliques")} {t("ia_ville") + " " + filtreVille}
           </p>
         )}
       </form>
@@ -147,20 +138,6 @@ export default function HotelsPage() {
           />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm text-slate-300">
-            {t("hotels_prix_nuit")} : {(prixMax ?? plafond).toLocaleString("fr-CA")} $
-          </label>
-          <input
-            type="range"
-            min="0"
-            max={plafond}
-            step="10"
-            value={prixMax ?? plafond}
-            onChange={(e) => setPrixMax(Number(e.target.value) >= plafond ? null : Number(e.target.value))}
-            className="w-48"
-          />
-        </div>
 
         <label className="flex items-center gap-2 text-sm text-slate-300">
           <input
@@ -171,19 +148,11 @@ export default function HotelsPage() {
           {t("hotels_wifi")}
         </label>
 
-        <label className="flex items-center gap-2 text-sm text-slate-300">
-          <input
-            type="checkbox"
-            checked={piscineSeulement}
-            onChange={(e) => setPiscineSeulement(e.target.checked)}
-          />
-          {t("hotels_piscine")}
-        </label>
 
         {aRechercheActive && (
           <button
             type="button"
-            onClick={() => { setFiltreVille(""); setPrixMinIA(0); setMessageIA(""); }}
+            onClick={() => { setFiltreVille(""); setMessageIA(""); }}
             className="rounded-lg bg-slate-700 px-4 py-2 text-sm hover:bg-slate-600"
           >
             {t("ia_effacer")}
@@ -216,8 +185,8 @@ export default function HotelsPage() {
               </p>
               <div className="mb-2 flex flex-wrap gap-2 text-xs text-slate-400">
                 {hotel.wifi && <span>{t("hotels_wifi")}</span>}
-                {hotel.piscine && <span>- {t("hotels_piscine")}</span>}
-                {hotel.petitDejeunerInclus && <span>- {t("hotels_petit_dej")}</span>}
+                {hotel.parking && <span>- {t("fiche_parking")}</span>}
+                {hotel.restaurant && <span>- Restaurant</span>}
               </div>
               {hotel.visiteVirtuelle && (
                 <span className="mt-3 inline-block rounded-full bg-blue-600 px-3 py-1 text-xs">

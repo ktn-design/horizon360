@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getHotelParId, getPartenaireApiParHotel, sauvegarderPartenaireApi, HotelPartenaireApi } from "@/lib/store";
+import { texteErreur } from "@/lib/erreurs";
 
 export default function ApiPmsHotelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: hotelId } = use(params);
@@ -22,11 +23,6 @@ export default function ApiPmsHotelPage({ params }: { params: Promise<{ id: stri
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const h = await getHotelParId(hotelId);
       setNomHotel(h ? h.titre : "Hotel");
       const existant = await getPartenaireApiParHotel(hotelId);
@@ -65,7 +61,7 @@ export default function ApiPmsHotelPage({ params }: { params: Promise<{ id: stri
       await sauvegarderPartenaireApi(partenaire);
       setEnregistre(true);
     } catch (err) {
-      alert("Erreur lors de l'enregistrement.");
+      alert(texteErreur(err));
     }
     setEnCours(false);
   }

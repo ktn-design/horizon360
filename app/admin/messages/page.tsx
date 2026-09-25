@@ -12,11 +12,6 @@ export default function MessagesAdminPage() {
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const m = await getMessagesContact();
       setMessages(m);
       setCharge(true);

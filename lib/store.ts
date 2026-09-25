@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
-import { Maison, Hotel, Salle, ParametresSite, Societe, Immeuble, Panorama360 } from "@/types";
+import { Maison, Hotel, Salle, ParametresSite, Societe, Immeuble, Panorama360, Extra } from "@/types";
 import { ExtraChoisi } from "./prix";
+import { messageErreurBase } from "./erreurs";
 
 function maisonVersDb(m: Maison) {
   return {
@@ -74,11 +75,13 @@ export async function getMaisonParId(id: string): Promise<Maison | undefined> {
 
 export async function sauvegarderMaison(maison: Maison) {
   const { error } = await supabase.from("maisons").upsert(maisonVersDb(maison));
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(messageErreurBase(error, "la maison"));
 }
 
 export async function supprimerMaison(id: string) {
-  await supabase.from("maisons").delete().eq("id", id);
+  const { data, error } = await supabase.from("maisons").delete().eq("id", id).select("id");
+  if (error) throw new Error(messageErreurBase(error, "la maison").replace("d'enregistrer", "de supprimer"));
+  if (!data || data.length === 0) throw new Error("Suppression refusee : votre compte n'a pas la permission de supprimer cet element, ou il n'existe plus.");
 }
 
 export async function getMaisonsParImmeuble(immeubleId: string): Promise<Maison[]> {
@@ -155,11 +158,13 @@ export async function getHotelParId(id: string): Promise<Hotel | undefined> {
 
 export async function sauvegarderHotel(hotel: Hotel) {
   const { error } = await supabase.from("hotels").upsert(hotelVersDb(hotel));
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(messageErreurBase(error, "l'hotel"));
 }
 
 export async function supprimerHotel(id: string) {
-  await supabase.from("hotels").delete().eq("id", id);
+  const { data, error } = await supabase.from("hotels").delete().eq("id", id).select("id");
+  if (error) throw new Error(messageErreurBase(error, "l'hotel").replace("d'enregistrer", "de supprimer"));
+  if (!data || data.length === 0) throw new Error("Suppression refusee : votre compte n'a pas la permission de supprimer cet element, ou il n'existe plus.");
 }
 
 function salleVersDb(s: Salle) {
@@ -232,11 +237,13 @@ export async function getSalleParId(id: string): Promise<Salle | undefined> {
 
 export async function sauvegarderSalle(salle: Salle) {
   const { error } = await supabase.from("salles").upsert(salleVersDb(salle));
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(messageErreurBase(error, "la salle"));
 }
 
 export async function supprimerSalle(id: string) {
-  await supabase.from("salles").delete().eq("id", id);
+  const { data, error } = await supabase.from("salles").delete().eq("id", id).select("id");
+  if (error) throw new Error(messageErreurBase(error, "la salle").replace("d'enregistrer", "de supprimer"));
+  if (!data || data.length === 0) throw new Error("Suppression refusee : votre compte n'a pas la permission de supprimer cet element, ou il n'existe plus.");
 }
 
 export async function getSocietes(): Promise<Societe[]> {
@@ -259,7 +266,7 @@ export async function sauvegarderSociete(societe: Societe) {
     id: societe.id, nom: societe.nom, description: societe.description,
     logo_url: societe.logoUrl, whatsapp: societe.whatsapp, telephone: societe.telephone,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(messageErreurBase(error, "la societe"));
 }
 
 export async function supprimerSociete(id: string) {
@@ -303,7 +310,7 @@ export async function sauvegarderImmeuble(immeuble: Immeuble) {
     ville: immeuble.localisation.ville, quartier: immeuble.localisation.quartier || null,
     photos: immeuble.photos,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(messageErreurBase(error, "l'immeuble"));
 }
 
 export async function supprimerImmeuble(id: string) {
@@ -378,7 +385,7 @@ export async function sauvegarderParametres(parametres: ParametresSite) {
     couleur_bouton_hotels: parametres.couleurBoutonHotels,
     couleur_bouton_salles: parametres.couleurBoutonSalles,
   });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(messageErreurBase(error, "les parametres"));
 }
 
 export interface MessageContact {
@@ -553,6 +560,8 @@ export interface ChambreHotel {
   estSuite: boolean;
   sallesDeBain: number;
   climatisation: boolean;
+  // Options que le client peut ajouter en reservant cette chambre (petit-dejeuner, piscine, kayak...).
+  extras: Extra[];
 }
 
 function chambreVersDb(c: ChambreHotel) {
@@ -572,6 +581,7 @@ function chambreVersDb(c: ChambreHotel) {
     est_suite: c.estSuite,
     salles_de_bain: c.sallesDeBain,
     climatisation: c.climatisation,
+    extras: c.extras || [],
   };
 }
 
@@ -592,6 +602,7 @@ function dbVersChambre(d: any): ChambreHotel {
     estSuite: d.est_suite || false,
     sallesDeBain: d.salles_de_bain || 1,
     climatisation: d.climatisation || false,
+    extras: d.extras || [],
   };
 }
 
@@ -615,11 +626,13 @@ export async function getChambreParId(id: string): Promise<ChambreHotel | undefi
 
 export async function sauvegarderChambre(chambre: ChambreHotel) {
   const { error } = await supabase.from("chambres").upsert(chambreVersDb(chambre));
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(messageErreurBase(error, "la chambre"));
 }
 
 export async function supprimerChambre(id: string) {
-  await supabase.from("chambres").delete().eq("id", id);
+  const { data, error } = await supabase.from("chambres").delete().eq("id", id).select("id");
+  if (error) throw new Error(messageErreurBase(error, "la chambre").replace("d'enregistrer", "de supprimer"));
+  if (!data || data.length === 0) throw new Error("Suppression refusee : votre compte n'a pas la permission de supprimer cet element, ou il n'existe plus.");
 }
 
 export interface HotelPartenaireApi {
@@ -661,7 +674,7 @@ export async function getPartenaireApiParHotel(hotelId: string): Promise<HotelPa
 
 export async function sauvegarderPartenaireApi(partenaire: HotelPartenaireApi) {
   const { error } = await supabase.from("hotels_partenaires_api").upsert(partenaireApiVersDb(partenaire));
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(messageErreurBase(error, "la connexion PMS"));
 }
 
 export interface Visite {

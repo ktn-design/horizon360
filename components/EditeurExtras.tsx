@@ -4,17 +4,18 @@ import { Extra, FacturationExtra } from "@/types";
 import { LIBELLES_FACTURATION } from "@/lib/prix";
 
 interface EditeurExtrasProps {
-  type: "hotel" | "salle";
+  type: "chambre" | "salle";
   extras: Extra[];
   onChange: (extras: Extra[]) => void;
 }
 
 // Idees d'extras courants : un clic ajoute la ligne, l'admin n'a plus qu'a saisir le prix.
-const SUGGESTIONS: Record<"hotel" | "salle", { nom: string; facturation: FacturationExtra }[]> = {
-  hotel: [
+const SUGGESTIONS: Record<"chambre" | "salle", { nom: string; facturation: FacturationExtra }[]> = {
+  chambre: [
     { nom: "Petit-dejeuner", facturation: "par_personne_par_nuit" },
     { nom: "Acces piscine", facturation: "par_personne" },
     { nom: "Spa", facturation: "par_personne" },
+    { nom: "Salle de sport", facturation: "par_personne" },
     { nom: "Kayak", facturation: "par_personne" },
     { nom: "Tennis", facturation: "forfait" },
     { nom: "Parking", facturation: "par_nuit" },
@@ -38,7 +39,7 @@ function nouvelIdExtra(): string {
 export default function EditeurExtras({ type, extras, onChange }: EditeurExtrasProps) {
   // Une salle se reserve a la journee : facturer "par nuit" n'y a pas de sens.
   const facturations: FacturationExtra[] =
-    type === "hotel" ? ["forfait", "par_nuit", "par_personne", "par_personne_par_nuit"] : ["forfait", "par_personne"];
+    type === "chambre" ? ["forfait", "par_nuit", "par_personne", "par_personne_par_nuit"] : ["forfait", "par_personne"];
 
   function ajouter(nom = "", facturation: FacturationExtra = "forfait") {
     onChange([...extras, { id: nouvelIdExtra(), nom, prix: 0, facturation }]);
@@ -58,10 +59,13 @@ export default function EditeurExtras({ type, extras, onChange }: EditeurExtrasP
 
   return (
     <div className="rounded-xl bg-slate-800 p-5">
-      <h3 className="text-lg font-semibold">Extras payants</h3>
+      <h3 className="text-lg font-semibold">{type === "chambre" ? "Options de la chambre" : "Extras payants"}</h3>
       <p className="mb-4 text-sm text-slate-400">
-        Options que le client peut ajouter a sa reservation. Leur prix est ajoute automatiquement au total
-        (paiement en ligne, paiement sur place et PDF de confirmation).
+        {type === "chambre"
+          ? "Options que le client peut cocher en reservant cette chambre (petit-dejeuner, piscine, kayak...). N'ajoutez que ce que l'hotel propose vraiment. "
+          : "Options que le client peut ajouter a sa reservation. "}
+        Leur prix est ajoute automatiquement au total (paiement en ligne, paiement sur place et PDF de confirmation).
+        Un prix de 0 signifie « inclus ».
       </p>
 
       {extras.length > 0 && (

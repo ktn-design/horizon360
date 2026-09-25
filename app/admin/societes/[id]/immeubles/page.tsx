@@ -7,6 +7,7 @@ import { getSocieteParId, getImmeublesParSociete, sauvegarderImmeuble, supprimer
 import { uploaderPhoto } from "@/lib/imageUtils";
 import SelectPays from "@/components/SelectPays";
 import { Immeuble } from "@/types";
+import { texteErreur } from "@/lib/erreurs";
 
 export default function ImmeublesAdminPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: societeId } = use(params);
@@ -28,11 +29,6 @@ export default function ImmeublesAdminPage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const societe = await getSocieteParId(societeId);
       setNomSociete(societe ? societe.nom : "Societe");
       const im = await getImmeublesParSociete(societeId);
@@ -56,7 +52,7 @@ export default function ImmeublesAdminPage({ params }: { params: Promise<{ id: s
         const url = await uploaderPhoto(fichiers[i]);
         nouvelles.push(url);
       } catch (err) {
-        alert("Erreur lors de l'envoi d'une photo.");
+        alert(texteErreur(err));
       }
     }
     setPhotos((prev) => [...prev, ...nouvelles]);

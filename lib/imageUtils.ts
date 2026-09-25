@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { messageErreurPhoto } from "./erreurs";
 
 export async function fichierVersBase64(fichier: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -16,7 +17,7 @@ export async function uploaderPhoto(fichier: File): Promise<string> {
   const { error } = await supabase.storage.from("photos").upload(nomFichier, fichier);
 
   if (error) {
-    throw new Error("Erreur upload: " + error.message);
+    throw new Error(messageErreurPhoto(error as { message: string; statusCode?: string }, fichier.name));
   }
 
   const { data } = supabase.storage.from("photos").getPublicUrl(nomFichier);

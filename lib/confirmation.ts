@@ -56,8 +56,8 @@ export async function envoyerConfirmationReservation(reservation: Reservation, p
     }
 
     if (hotel?.wifi) commodites.push("Wifi");
-    if (hotel?.piscine) commodites.push("Acces piscine");
-    if (hotel?.petitDejeunerInclus) commodites.push("Petit-dejeuner inclus");
+    if (hotel?.parking) commodites.push("Parking");
+    if (hotel?.restaurant) commodites.push("Restaurant");
     if (climatisation) commodites.push("Climatisation");
 
     periode = "Check-in : " + reservation.dateDebut + "  |  Check-out : " + reservation.dateFin;

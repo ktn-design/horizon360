@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getMaisonParId, sauvegarderMaison, supprimerMaison } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
 import { Maison } from "@/types";
+import { texteErreur } from "@/lib/erreurs";
 
 export default function ModifierMaisonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -40,11 +41,6 @@ export default function ModifierMaisonPage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const maison = await getMaisonParId(id);
       if (maison) {
         setMaisonExistante(maison);
@@ -94,7 +90,7 @@ export default function ModifierMaisonPage({ params }: { params: Promise<{ id: s
         const url = await uploaderPhoto(fichiers[i]);
         nouvellesPhotos.push(url);
       } catch (err) {
-        alert("Erreur lors de l'envoi d'une photo.");
+        alert(texteErreur(err));
       }
     }
 
@@ -146,7 +142,7 @@ export default function ModifierMaisonPage({ params }: { params: Promise<{ id: s
       await sauvegarderMaison(maisonMaj);
       router.push("/admin/dashboard");
     } catch (err) {
-      alert("Erreur lors de l'enregistrement.");
+      alert(texteErreur(err));
     }
   }
 

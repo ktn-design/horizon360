@@ -16,11 +16,6 @@ export default function Visite360SallePage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const s = await getSalleParId(id);
       if (s) {
         setSalle(s);

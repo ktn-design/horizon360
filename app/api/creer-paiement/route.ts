@@ -28,11 +28,17 @@ export async function POST(request: Request) {
       }
       const nuits = nombreNuits(dateDebut, dateFin);
 
+      // On reserve une chambre, jamais l'hotel entier : le prix et les options viennent de la chambre.
       const chambre = chambreId ? await getChambreParId(chambreId) : undefined;
-      const prixNuit = chambre ? chambre.prixParNuit : hotel.prixParNuit;
-      montant = nuits * prixNuit;
-      nomLigne = chambre ? hotel.titre + " - " + chambre.nom : hotel.titre;
-      lignesExtras = calculerExtras(hotel.extras || [], extrasIds, nuits, nombrePersonnes).lignes;
+      if (!chambre || chambre.hotelId !== bienId) {
+        return NextResponse.json({ erreur: "Choisissez une chambre de cet hotel." }, { status: 400 });
+      }
+      if (chambre.statut !== "disponible") {
+        return NextResponse.json({ erreur: "Cette chambre n'est pas disponible a la reservation." }, { status: 409 });
+      }
+      montant = nuits * chambre.prixParNuit;
+      nomLigne = hotel.titre + " - " + chambre.nom;
+      lignesExtras = calculerExtras(chambre.extras || [], extrasIds, nuits, nombrePersonnes).lignes;
 
       const reservationsExistantes = await getReservationsParBien(bienId);
       if (!periodeHotelDisponible(reservationsExistantes, chambreId || undefined, dateDebut, dateFin)) {
@@ -78,7 +84,8 @@ export async function POST(request: Request) {
           },
           quantity: 1,
         },
-        ...lignesExtras.map((l) => ({
+        // Les options incluses (0 $) n'apparaissent pas comme ligne de paiement.
+        ...lignesExtras.filter((l) => l.prix > 0).map((l) => ({
           price_data: {
             currency: "usd",
             product_data: { name: l.nom },

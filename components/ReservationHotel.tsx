@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { creerReservation, getReservationsParBien, getChambresParHotel, getChambreParId, getHotelParId, Reservation, ChambreHotel } from "@/lib/store";
+import { creerReservation, getReservationsParBien, getChambresParHotel, getChambreParId, Reservation, ChambreHotel } from "@/lib/store";
 import { useAuth } from "@/lib/AuthContext";
 import { useLanguage } from "@/lib/LanguageContext";
 import { periodeHotelDisponible } from "@/lib/disponibilite";
 import ModalConnexion from "./ModalConnexion";
 import ChoixExtras from "./ChoixExtras";
-import { Extra } from "@/types";
 import { calculerExtras, extraParPersonne } from "@/lib/prix";
 
 interface ReservationHotelProps {
@@ -30,8 +29,6 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
   const [reservationsExistantes, setReservationsExistantes] = useState<Reservation[]>([]);
   const [chambres, setChambres] = useState<ChambreHotel[]>([]);
   const [chambreId, setChambreId] = useState(chambreIdFixe || "");
-  const [prixParNuitHotel, setPrixParNuitHotel] = useState(0);
-  const [extrasHotel, setExtrasHotel] = useState<Extra[]>([]);
   const [extrasIds, setExtrasIds] = useState<string[]>([]);
   const [nombrePersonnes, setNombrePersonnes] = useState(1);
   const [modePaiement, setModePaiement] = useState<"carte" | "sur_place">("carte");
@@ -42,26 +39,15 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
   useEffect(() => {
     async function charger() {
       if (chambreIdFixe) {
-        const [res, chambre, hotel] = await Promise.all([
-          getReservationsParBien(hotelId),
-          getChambreParId(chambreIdFixe),
-          getHotelParId(hotelId),
-        ]);
+        const [res, chambre] = await Promise.all([getReservationsParBien(hotelId), getChambreParId(chambreIdFixe)]);
         setReservationsExistantes(res);
         setChambres(chambre ? [chambre] : []);
         setChambreId(chambreIdFixe);
-        setExtrasHotel(hotel?.extras || []);
         return;
       }
-      const [res, chs, hotel] = await Promise.all([
-        getReservationsParBien(hotelId),
-        getChambresParHotel(hotelId),
-        getHotelParId(hotelId),
-      ]);
+      const [res, chs] = await Promise.all([getReservationsParBien(hotelId), getChambresParHotel(hotelId)]);
       setReservationsExistantes(res);
       setChambres(chs.filter((c) => c.statut === "disponible"));
-      setPrixParNuitHotel(hotel?.prixParNuit || 0);
-      setExtrasHotel(hotel?.extras || []);
     }
     charger();
   }, [hotelId, chambreIdFixe]);
@@ -107,14 +93,16 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
     }
   }, [cleSauvegarde, dateArrivee, dateDepart, nom, telephone, message, chambreId, modePaiement, extrasIds, nombrePersonnes]);
 
+  // On reserve toujours une chambre : son prix et ses options font le total.
   const chambreSelectionnee = chambres.find((c) => c.id === chambreId);
-  const prixParNuit = chambreSelectionnee ? chambreSelectionnee.prixParNuit : prixParNuitHotel;
+  const prixParNuit = chambreSelectionnee ? chambreSelectionnee.prixParNuit : 0;
+  const extrasChambre = chambreSelectionnee?.extras || [];
   const nuits =
     dateArrivee && dateDepart && dateDepart > dateArrivee
       ? Math.round((new Date(dateDepart).getTime() - new Date(dateArrivee).getTime()) / (1000 * 60 * 60 * 24))
       : 0;
   const montantHebergement = nuits * prixParNuit;
-  const { lignes: lignesExtras, total: totalExtras } = calculerExtras(extrasHotel, extrasIds, nuits, nombrePersonnes);
+  const { lignes: lignesExtras, total: totalExtras } = calculerExtras(extrasChambre, extrasIds, nuits, nombrePersonnes);
   const montant = montantHebergement + totalExtras;
   const nombrePersonnesUtile = lignesExtras.some(extraParPersonne) ? nombrePersonnes : undefined;
 
@@ -135,7 +123,7 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
       setErreur(t("resa_depart_apres_arrivee"));
       return;
     }
-    if (chambres.length > 0 && !chambreId) {
+    if (!chambreSelectionnee) {
       setErreur(t("resa_choisir_chambre_requis"));
       return;
     }
@@ -250,10 +238,23 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
           </div>
         </div>
 
+        {!chambreIdFixe && chambres.length === 0 && (
+          <p className="rounded-lg bg-slate-700 p-3 text-sm text-slate-300">{t("resa_aucune_chambre")}</p>
+        )}
+
         {!chambreIdFixe && chambres.length > 0 && (
           <div>
             <label className="mb-1 block text-sm text-slate-300">{t("resa_choisir_chambre")}</label>
-            <select required value={chambreId} onChange={(e) => setChambreId(e.target.value)} className="input">
+            <select
+              required
+              value={chambreId}
+              onChange={(e) => {
+                setChambreId(e.target.value);
+                // Les options dependent de la chambre : on repart d'une selection vide.
+                setExtrasIds([]);
+              }}
+              className="input"
+            >
               <option value="">{t("resa_chambre_selectionner")}</option>
               {chambres.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -285,7 +286,7 @@ export default function ReservationHotel({ hotelId, chambreIdFixe }: Reservation
         </div>
 
         <ChoixExtras
-          extras={extrasHotel}
+          extras={extrasChambre}
           idsChoisis={extrasIds}
           onChangeIds={setExtrasIds}
           nombrePersonnes={nombrePersonnes}

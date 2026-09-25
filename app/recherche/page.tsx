@@ -87,7 +87,7 @@ export default function RecherchePage() {
               <Link key={hotel.id} href={"/hotels/" + hotel.id} className="rounded-xl bg-slate-800 p-5 hover:bg-slate-700">
                 <h3 className="mb-1 font-semibold">{hotel.titre}</h3>
                 <p className="text-sm text-slate-300">{hotel.localisation.ville}, {hotel.localisation.province}, {hotel.localisation.pays}</p>
-                <p className="mt-2 font-bold text-emerald-400">{hotel.prixParNuit.toLocaleString("fr-CA")} $ {t("hotels_par_nuit")}</p>
+                <p className="mt-2 text-sm font-semibold text-blue-400">{t("hotels_voir_chambres")} →</p>
               </Link>
             ))}
           </div>

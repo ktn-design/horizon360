@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getSocietes, sauvegarderSociete, supprimerSociete } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
 import { Societe } from "@/types";
+import { texteErreur } from "@/lib/erreurs";
 
 export default function SocietesAdminPage() {
   const router = useRouter();
@@ -17,11 +18,6 @@ export default function SocietesAdminPage() {
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const s = await getSocietes();
       setSocietes(s);
       setPret(true);
@@ -41,7 +37,7 @@ export default function SocietesAdminPage() {
       const url = await uploaderPhoto(fichier);
       setLogoUrl(url);
     } catch (err) {
-      alert("Erreur lors de l'envoi du logo.");
+      alert(texteErreur(err));
     }
     setEnCours(false);
   }

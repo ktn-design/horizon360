@@ -16,11 +16,6 @@ export default function Visite360HotelPage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const h = await getHotelParId(id);
       if (h) {
         setHotel(h);

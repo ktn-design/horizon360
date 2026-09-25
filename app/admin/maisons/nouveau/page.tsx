@@ -6,6 +6,7 @@ import { sauvegarderMaison, getImmeubles } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
 import SelectPays from "@/components/SelectPays";
 import { Maison, Immeuble } from "@/types";
+import { texteErreur } from "@/lib/erreurs";
 
 export default function NouvelleMaisonPage() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function NouvelleMaisonPage() {
         const url = await uploaderPhoto(fichiers[i]);
         nouvellesPhotos.push(url);
       } catch (err) {
-        alert("Erreur lors de l'envoi d'une photo.");
+        alert(texteErreur(err));
       }
     }
 
@@ -112,7 +113,7 @@ export default function NouvelleMaisonPage() {
       await sauvegarderMaison(nouvelleMaison);
       router.push("/admin/dashboard");
     } catch (err) {
-      alert("Erreur lors de l'enregistrement.");
+      alert(texteErreur(err));
     }
   }
 

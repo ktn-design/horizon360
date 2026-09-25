@@ -14,11 +14,6 @@ export default function ChambresAdminPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const h = await getHotelParId(hotelId);
       setNomHotel(h ? h.titre : "Hotel");
       const c = await getChambresParHotel(hotelId);

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getParametres, sauvegarderParametres } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
 import { ParametresSite } from "@/types";
+import { texteErreur } from "@/lib/erreurs";
 
 export default function ParametresPage() {
   const router = useRouter();
@@ -34,11 +35,6 @@ export default function ParametresPage() {
 
   useEffect(() => {
     async function verifierEtCharger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const p = await getParametres();
       setForm(p);
       setCharge(true);
@@ -59,7 +55,7 @@ export default function ParametresPage() {
       const url = await uploaderPhoto(fichier);
       champ(nomChamp, url);
     } catch (err) {
-      alert("Erreur lors de l'envoi de l'image.");
+      alert(texteErreur(err));
     }
     setEnCours(false);
   }
@@ -74,7 +70,7 @@ export default function ParametresPage() {
         const url = await uploaderPhoto(fichiers[i]);
         nouvelles.push(url);
       } catch (err) {
-        alert("Erreur lors de l'envoi d'une image.");
+        alert(texteErreur(err));
       }
     }
     setForm((prev) => ({
@@ -99,7 +95,7 @@ export default function ParametresPage() {
       await sauvegarderParametres(form);
       setEnregistre(true);
     } catch (err) {
-      alert("Erreur lors de l'enregistrement.");
+      alert(texteErreur(err));
     }
   }
 

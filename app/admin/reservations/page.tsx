@@ -14,11 +14,6 @@ export default function ReservationsAdminPage() {
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const r = await getToutesReservations();
       setReservations(r);
       setCharge(true);

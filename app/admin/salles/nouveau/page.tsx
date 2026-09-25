@@ -7,6 +7,7 @@ import { uploaderPhoto } from "@/lib/imageUtils";
 import SelectPays from "@/components/SelectPays";
 import { Extra, Salle, TypeEvenement } from "@/types";
 import EditeurExtras from "@/components/EditeurExtras";
+import { texteErreur } from "@/lib/erreurs";
 
 const evenementsListe: { valeur: TypeEvenement; label: string }[] = [
   { valeur: "mariage", label: "Mariage" },
@@ -67,7 +68,7 @@ export default function NouvelleSallePage() {
         const url = await uploaderPhoto(fichiers[i]);
         nouvelles.push(url);
       } catch (err) {
-        alert("Erreur lors de l'envoi d'une photo.");
+        alert(texteErreur(err));
       }
     }
     setPhotos((prev) => [...prev, ...nouvelles]);
@@ -115,7 +116,7 @@ export default function NouvelleSallePage() {
       await sauvegarderSalle(nouvelleSalle);
       router.push("/admin/dashboard");
     } catch (err) {
-      alert("Erreur lors de l'enregistrement.");
+      alert(texteErreur(err));
     }
   }
 

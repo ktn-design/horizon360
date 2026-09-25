@@ -5,15 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getHotelParId, sauvegarderHotel, supprimerHotel } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
-import { Extra, Hotel } from "@/types";
-import EditeurExtras from "@/components/EditeurExtras";
+import { Hotel } from "@/types";
+import { texteErreur } from "@/lib/erreurs";
 
 export default function ModifierHotelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [charge, setCharge] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
-  const [extras, setExtras] = useState<Extra[]>([]);
   const [enCours, setEnCours] = useState(false);
   const [hotelExistant, setHotelExistant] = useState<Hotel | null>(null);
 
@@ -40,15 +39,9 @@ export default function ModifierHotelPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const hotel = await getHotelParId(id);
       if (hotel) {
         setHotelExistant(hotel);
-        setExtras(hotel.extras || []);
         setForm({
           titre: hotel.titre,
           description: hotel.description,
@@ -90,7 +83,7 @@ export default function ModifierHotelPage({ params }: { params: Promise<{ id: st
         const url = await uploaderPhoto(fichiers[i]);
         nouvelles.push(url);
       } catch (err) {
-        alert("Erreur lors de l'envoi d'une photo.");
+        alert(texteErreur(err));
       }
     }
     setPhotos((prev) => [...prev, ...nouvelles]);
@@ -127,7 +120,8 @@ export default function ModifierHotelPage({ params }: { params: Promise<{ id: st
       photos: photos,
       panorama360Url: hotelExistant?.panorama360Url,
       panoramas: hotelExistant?.panoramas,
-      extras: extras.filter((e) => e.nom.trim() !== ""),
+      // Les options (petit-dejeuner, piscine, kayak...) se reglent sur chaque chambre.
+      extras: hotelExistant?.extras || [],
       contact: {
         whatsapp: form.whatsapp,
         telephone: form.telephone,
@@ -138,14 +132,18 @@ export default function ModifierHotelPage({ params }: { params: Promise<{ id: st
       await sauvegarderHotel(hotelMaj);
       router.push("/admin/dashboard");
     } catch (err) {
-      alert("Erreur lors de l'enregistrement.");
+      alert(texteErreur(err));
     }
   }
 
   async function handleSupprimer() {
     if (confirm("Supprimer cet hotel definitivement ?")) {
-      await supprimerHotel(id);
-      router.push("/admin/dashboard");
+      try {
+        await supprimerHotel(id);
+        router.push("/admin/dashboard");
+      } catch (err) {
+        alert(texteErreur(err));
+      }
     }
   }
 
@@ -165,13 +163,13 @@ export default function ModifierHotelPage({ params }: { params: Promise<{ id: st
         </Champ>
 
         <div className="grid grid-cols-2 gap-4">
-          <Champ label="Prix par nuit">
-            <input required type="number" value={form.prixParNuit} onChange={(e) => champ("prixParNuit", e.target.value)} className="input" />
-          </Champ>
           <Champ label="Etoiles (1 a 5)">
             <input required type="number" min="1" max="5" value={form.etoiles} onChange={(e) => champ("etoiles", e.target.value)} className="input" />
           </Champ>
         </div>
+        <p className="text-sm text-slate-400">
+          Les prix et les options (petit-dejeuner, piscine, spa, kayak...) se reglent sur chaque chambre, via le bouton « Chambres » du tableau de bord.
+        </p>
 
         <Champ label="Statut">
           <select value={form.statut} onChange={(e) => champ("statut", e.target.value)} className="input">
@@ -197,10 +195,7 @@ export default function ModifierHotelPage({ params }: { params: Promise<{ id: st
         <div className="grid grid-cols-3 gap-3">
           <Case label="Wifi" checked={form.wifi} onChange={(v) => champ("wifi", v)} />
           <Case label="Parking" checked={form.parking} onChange={(v) => champ("parking", v)} />
-          <Case label="Piscine" checked={form.piscine} onChange={(v) => champ("piscine", v)} />
-          <Case label="Salle de sport" checked={form.salleDeSport} onChange={(v) => champ("salleDeSport", v)} />
           <Case label="Restaurant" checked={form.restaurant} onChange={(v) => champ("restaurant", v)} />
-          <Case label="Petit-dejeuner inclus" checked={form.petitDejeunerInclus} onChange={(v) => champ("petitDejeunerInclus", v)} />
           <Case label="Climatisation" checked={form.climatisation} onChange={(v) => champ("climatisation", v)} />
           <Case label="Visite virtuelle" checked={form.visiteVirtuelle} onChange={(v) => champ("visiteVirtuelle", v)} />
         </div>
@@ -227,8 +222,6 @@ export default function ModifierHotelPage({ params }: { params: Promise<{ id: st
             </div>
           )}
         </div>
-
-        <EditeurExtras type="hotel" extras={extras} onChange={setExtras} />
 
         <div className="grid grid-cols-2 gap-4">
           <Champ label="WhatsApp (avec indicatif, sans +)">

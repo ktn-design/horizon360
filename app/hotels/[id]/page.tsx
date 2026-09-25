@@ -6,7 +6,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Hotel } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
-import ReservationHotel from "@/components/ReservationHotel";
 import AssistantDeco from "@/components/AssistantDeco";
 import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
 
@@ -84,10 +83,7 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {hotel.wifi && <Badge label={t("hotels_wifi")} />}
             {hotel.parking && <Badge label={t("fiche_parking")} />}
-            {hotel.piscine && <Badge label={t("hotels_piscine")} />}
-            {hotel.salleDeSport && <Badge label="Salle de sport" />}
             {hotel.restaurant && <Badge label="Restaurant" />}
-            {hotel.petitDejeunerInclus && <Badge label={t("hotels_petit_dej")} />}
             {hotel.climatisation && <Badge label={t("fiche_climatisation")} />}
           </div>
 
@@ -120,7 +116,7 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
                         {chambre.estSuite && <span>Suite</span>}
                         {chambre.climatisation && <span>- {t("fiche_climatisation")}</span>}
                       </div>
-                      <p className="mt-1 font-bold text-emerald-400">{chambre.prixParNuit.toLocaleString("fr-CA")} $/nuit</p>
+                      <p className="mt-2 text-sm font-semibold text-blue-400">{t("hotels_voir_chambres")} →</p>
                     </div>
                   </Link>
                 ))}
@@ -128,10 +124,9 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
             </div>
           )}
 
+          {/* On ne reserve pas un hotel entier : la reservation se fait depuis la fiche d'une chambre. */}
           {chambres.length === 0 && (
-            <div className="mt-8">
-              <ReservationHotel hotelId={hotel.id} />
-            </div>
+            <p className="mt-8 rounded-xl bg-slate-800 p-5 text-slate-300">{t("resa_aucune_chambre")}</p>
           )}
         </div>
 

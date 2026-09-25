@@ -16,11 +16,6 @@ export default function Visite360ChambrePage({ params }: { params: Promise<{ id:
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const c = await getChambreParId(chambreId);
       if (c) {
         setChambre(c);

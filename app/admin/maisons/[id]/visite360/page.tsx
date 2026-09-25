@@ -16,11 +16,6 @@ export default function Visite360MaisonPage({ params }: { params: Promise<{ id: 
 
   useEffect(() => {
     async function charger() {
-      const connecte = localStorage.getItem("admin_connecte");
-      if (connecte !== "true") {
-        router.push("/admin");
-        return;
-      }
       const m = await getMaisonParId(id);
       if (m) {
         setMaison(m);
