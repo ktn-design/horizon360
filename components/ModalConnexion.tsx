@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
+import { estAppMobile } from "@/lib/appMobile";
 
 interface ModalConnexionProps {
   onFerme: () => void;
@@ -48,18 +49,23 @@ export default function ModalConnexion({ onFerme }: ModalConnexionProps) {
           <button onClick={onFerme} className="text-slate-400 hover:text-white">X</button>
         </div>
 
-        <button
-          onClick={connexionGoogle}
-          className="mb-4 w-full rounded-lg bg-white py-3 font-semibold text-slate-900 hover:bg-slate-100"
-        >
-          Continuer avec Google
-        </button>
+        {/* Google refuse la connexion dans une application (WebView) : email uniquement dans l'app mobile. */}
+        {!estAppMobile() && (
+          <>
+            <button
+              onClick={connexionGoogle}
+              className="mb-4 w-full rounded-lg bg-white py-3 font-semibold text-slate-900 hover:bg-slate-100"
+            >
+              Continuer avec Google
+            </button>
 
-        <div className="mb-4 flex items-center gap-3">
-          <div className="h-px flex-1 bg-slate-700"></div>
-          <span className="text-xs text-slate-500">ou</span>
-          <div className="h-px flex-1 bg-slate-700"></div>
-        </div>
+            <div className="mb-4 flex items-center gap-3">
+              <div className="h-px flex-1 bg-slate-700"></div>
+              <span className="text-xs text-slate-500">ou</span>
+              <div className="h-px flex-1 bg-slate-700"></div>
+            </div>
+          </>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <input

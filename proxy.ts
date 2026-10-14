@@ -8,6 +8,14 @@ import { COOKIE_SESSION_ADMIN, peutOuvrirPage, profilDepuisJeton } from "@/lib/p
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
+  // L'application mobile est reservee aux clients : pas d'administration (voir mobile/capacitor.config.ts).
+  if ((request.headers.get("user-agent") || "").includes("Horizon360App")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    return sansCache(NextResponse.redirect(url));
+  }
+
   // La page de connexion reste accessible (mais jamais mise en cache).
   if (pathname === "/admin" || pathname === "/admin/") {
     return sansCache(NextResponse.next());

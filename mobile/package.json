@@ -1,0 +1,19 @@
+{
+  "name": "horizon360-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Application mobile Horizon 360 (clients) : coquille Capacitor autour du site.",
+  "scripts": {
+    "sync": "cap sync android",
+    "android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
+    "typescript": "^7.0.2"
+  }
+}

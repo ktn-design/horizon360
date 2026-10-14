@@ -1,0 +1,3 @@
+# Scripts executes sous Linux/Mac (services de build) : fins de ligne LF obligatoires.
+gradlew text eol=lf
+*.sh text eol=lf
