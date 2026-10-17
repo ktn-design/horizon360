@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { uploaderPhoto } from "@/lib/imageUtils";
 import { Panorama360, Hotspot360 } from "@/types";
+import { texteErreur } from "@/lib/erreurs";
 
 interface EditeurVisite360Props {
   panoramas: Panorama360[];
@@ -24,19 +25,34 @@ export default function EditeurVisite360({ panoramas, onChange }: EditeurVisite3
 
     setEnCours(true);
     try {
+      // Image 360 classique : 2 fois plus large que haute. Stereo « haut/bas » (pour casque VR) :
+      // carree, les deux yeux l'un au-dessus de l'autre. Detectee ici, modifiable ensuite.
+      let stereo = false;
+      try {
+        const image = await createImageBitmap(fichier);
+        stereo = Math.abs(image.width / image.height - 1) < 0.1;
+        image.close();
+      } catch {
+        // dimensions illisibles : image classique par defaut
+      }
       const url = await uploaderPhoto(fichier, { panorama: true });
       const nouveauPanorama: Panorama360 = {
         id: Date.now().toString(),
         nom,
         url,
         hotspots: [],
+        stereo,
       };
       onChange([...panoramas, nouveauPanorama]);
       setIndexActif(panoramas.length);
     } catch (err) {
-      alert("Erreur lors de l'envoi de la photo.");
+      alert(texteErreur(err));
     }
     setEnCours(false);
+  }
+
+  function basculerStereo(stereo: boolean) {
+    onChange(panoramas.map((p) => (p.id === panoramaActif.id ? { ...p, stereo } : p)));
   }
 
   function supprimerPanorama(id: string) {
@@ -140,12 +156,22 @@ export default function EditeurVisite360({ panoramas, onChange }: EditeurVisite3
             </div>
           </div>
 
+          <label className="mb-3 flex items-start gap-2 rounded-lg bg-slate-700/60 p-3 text-sm text-slate-200">
+            <input type="checkbox" checked={!!panoramaActif.stereo} onChange={(e) => basculerStereo(e.target.checked)} className="mt-0.5" />
+            <span>
+              <strong>Image stereo « haut/bas » pour casque VR</strong> (relief en 3D). Image carree, l&apos;oeil gauche en haut et l&apos;oeil
+              droit en bas : export « 360 stereo » de Lumion, Enscape, Twinmotion ou D5 Render. Coche automatiquement pour une image
+              carree. Hors casque, seule la moitie du haut est montree.
+            </span>
+          </label>
+
+          {/* Cadre au format 2:1 de l'image 360 (stereo : la moitie du haut), pour que les reperes tombent au bon endroit. */}
           <div
             onClick={handleClicImage}
-            className="relative aspect-video w-full overflow-hidden rounded-lg"
+            className="relative aspect-[2/1] w-full overflow-hidden rounded-lg"
             style={{ cursor: modeAjoutRepere ? "crosshair" : "default" }}
           >
-            <img src={panoramaActif.url} alt={panoramaActif.nom} className="h-full w-full object-cover" />
+            <img src={panoramaActif.url} alt={panoramaActif.nom} className="h-full w-full object-cover object-top" />
             {panoramaActif.hotspots.map((hotspot) => {
               const xPourcent = (hotspot.yaw / (2 * Math.PI) + 0.5) * 100;
               const yPourcent = (0.5 - hotspot.pitch / Math.PI) * 100;

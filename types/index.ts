@@ -32,6 +32,10 @@ export interface Panorama360 {
   nom: string;
   url: string;
   hotspots: Hotspot360[];
+  // Image 360 stereoscopique « haut/bas » (oeil gauche en haut, oeil droit en bas), exportee
+  // par Lumion, Enscape, Twinmotion, D5... : relief dans un casque VR. Hors casque, seule
+  // la moitie du haut est affichee.
+  stereo?: boolean;
 }
 
 export interface Maison {

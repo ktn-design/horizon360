@@ -7,6 +7,7 @@ import { GyroscopePlugin } from "@photo-sphere-viewer/gyroscope-plugin";
 import "@photo-sphere-viewer/core/index.css";
 import "@photo-sphere-viewer/markers-plugin/index.css";
 import { Panorama360 } from "@/types";
+import { sourceAffichage } from "@/lib/panoramaStereo";
 
 export interface Hotspot {
   id: string;
@@ -41,6 +42,7 @@ const ICONES: Record<string, string> = {
   etincelles: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
   fleche: '<path d="M7 17 17 7"/><path d="M7 7h10v10"/>',
   gyroscope: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
+  casque: '<path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3h-3.5l-2-2.5a.7.7 0 0 0-1 0l-2 2.5H5a3 3 0 0 1-3-3z"/><circle cx="8" cy="12" r="1.6"/><circle cx="16" cy="12" r="1.6"/>',
 };
 
 // L'ordre compte : "salle de bain" et "salle a manger" doivent passer avant "salle".
@@ -123,11 +125,46 @@ export default function VisiteVirtuelle({
   const permissionIOSRef = useRef(false);
   const [gyroDisponible, setGyroDisponible] = useState(false);
   const [gyroActif, setGyroActif] = useState(false);
+  const panoramasRef = useRef(panoramas);
+  // Casque VR (Meta Quest...) : module VR precharge des que l'appareil est reconnu compatible,
+  // pour que le casque s'ouvre sans attente au clic.
+  const moduleVRRef = useRef<Promise<typeof import("@/lib/visiteVR")> | null>(null);
+  const [vrPossible, setVrPossible] = useState(false);
+  const [enVR, setEnVR] = useState(false);
 
   useEffect(() => {
     hotspotsRef.current = hotspots;
     onChangerPanoramaRef.current = onChangerPanorama;
+    panoramasRef.current = panoramas;
   });
+
+  useEffect(() => {
+    if (!navigator.xr) return;
+    navigator.xr
+      .isSessionSupported("immersive-vr")
+      .then((oui) => {
+        if (!oui) return;
+        moduleVRRef.current = import("@/lib/visiteVR");
+        setVrPossible(true);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function ouvrirVR() {
+    if (!moduleVRRef.current || enVR) return;
+    setEnVR(true);
+    try {
+      const { lancerVisiteVR } = await moduleVRRef.current;
+      await lancerVisiteVR({
+        panoramas: panoramasRef.current,
+        urlDepart: urlAfficheeRef.current,
+        onChangementPiece: (url) => onChangerPanoramaRef.current(url),
+      });
+    } catch (err) {
+      alert("Impossible d'ouvrir la visite en realite virtuelle : " + (err instanceof Error ? err.message : String(err)));
+    }
+    setEnVR(false);
+  }
 
   // Visite en plein ecran : on bloque le defilement de la page derriere (Navbar/Footer),
   // sinon un glissement du doigt fait scroller la page au lieu de tourner la vue.
@@ -149,7 +186,6 @@ export default function VisiteVirtuelle({
 
     const viewer = new Viewer({
       container: containerRef.current,
-      panorama: urlAfficheeRef.current,
       plugins: [
         [MarkersPlugin, { markers: construireMarqueurs(hotspotsRef.current, panoramas) }],
         [GyroscopePlugin, {}],
@@ -158,6 +194,13 @@ export default function VisiteVirtuelle({
       defaultZoomLvl: 0,
     });
     viewerRef.current = viewer;
+    // Image stereo : seule la moitie du haut est affichee hors casque (lib/panoramaStereo.ts).
+    const urlDepart = urlAfficheeRef.current;
+    sourceAffichage(urlDepart, panoramas.find((p) => p.url === urlDepart)?.stereo).then((source) => {
+      if (viewerRef.current === viewer && urlAfficheeRef.current === urlDepart) {
+        viewer.setPanorama(source, { transition: false }).catch(() => {});
+      }
+    });
 
     const markersPlugin = viewer.getPlugin(MarkersPlugin) as MarkersPlugin;
     markersPlugin.addEventListener("select-marker", (e) => {
@@ -232,8 +275,11 @@ export default function VisiteVirtuelle({
 
     urlAfficheeRef.current = panoramaUrl;
     markersPlugin.clearMarkers();
-    viewer
-      .setPanorama(panoramaUrl, { transition: { speed: 900, rotation: false, effect: "fade" } })
+    sourceAffichage(panoramaUrl, panoramas.find((p) => p.url === panoramaUrl)?.stereo)
+      .then((source) => {
+        if (urlAfficheeRef.current !== panoramaUrl) return;
+        return viewer.setPanorama(source, { transition: { speed: 900, rotation: false, effect: "fade" } });
+      })
       .then(() => {
         if (urlAfficheeRef.current === panoramaUrl) {
           markersPlugin.setMarkers(construireMarqueurs(hotspotsRef.current, panoramas));
@@ -286,6 +332,13 @@ export default function VisiteVirtuelle({
           <span className="h360-piece-actuelle-icone" dangerouslySetInnerHTML={{ __html: svg(iconePourPiece(pieceActuelle.nom)) }} />
           <span>{pieceActuelle.nom}</span>
         </div>
+      )}
+
+      {vrPossible && (
+        <button type="button" onClick={ouvrirVR} disabled={enVR} className="h360-bouton-vr">
+          <span dangerouslySetInnerHTML={{ __html: svg("casque") }} />
+          {enVR ? "Visite en cours dans le casque" : "Voir en VR"}
+        </button>
       )}
 
       {gyroDisponible && (
@@ -424,6 +477,26 @@ const STYLES = `
   background: rgba(255, 255, 255, .92);
   color: #0f172a;
 }
+.h360-bouton-vr {
+  position: absolute;
+  left: 16px;
+  bottom: calc(64px + env(safe-area-inset-bottom));
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: #2563eb;
+  border: 1px solid rgba(255, 255, 255, .35);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, .45);
+}
+.h360-bouton-vr:disabled { opacity: .7; cursor: default; }
+.h360-bouton-vr svg { width: 22px; height: 22px; }
 @media (prefers-reduced-motion: reduce) {
   .h360-repere-icone::after { animation: none; }
   .h360-repere { transition: none; }
