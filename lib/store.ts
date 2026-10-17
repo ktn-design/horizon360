@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import { Maison, Hotel, Salle, ParametresSite, Societe, Immeuble, Panorama360, Extra } from "@/types";
 import { ExtraChoisi } from "./prix";
 import { messageErreurBase } from "./erreurs";
+import { normaliserPays } from "./pays";
 
 // Apres une modification dans l'admin : vide le cache des pages publiques (app/api/revalider)
 // pour que les visiteurs voient le changement tout de suite. Sans effet cote serveur.
@@ -724,10 +725,13 @@ export interface Visite {
   ville?: string;
   // Absente pour les visites enregistrees avant la migration 20261017_maquettes_3d.sql.
   source?: SourceVisite;
+  // Cle pour compter les visiteurs uniques : identifiant anonyme de l appareil, ou a defaut
+  // (visites anciennes) l adresse IP. Jamais affichee.
+  visiteur: string;
   createdAt: string;
 }
 
-export async function enregistrerVisite(donnees: { page: string; pays?: string; ville?: string; ip?: string; source?: SourceVisite }) {
+export async function enregistrerVisite(donnees: { page: string; pays?: string; ville?: string; ip?: string; source?: SourceVisite; visiteur?: string }) {
   const ligne = {
     id: Date.now().toString() + "-" + Math.random().toString(36).slice(2, 8),
     page: donnees.page,
@@ -735,8 +739,8 @@ export async function enregistrerVisite(donnees: { page: string; pays?: string; 
     ville: donnees.ville || null,
     ip: donnees.ip || null,
   };
-  let { error } = await supabase.from("visites").insert({ ...ligne, source: donnees.source || null });
-  // Colonne "source" pas encore creee (migration non appliquee) : on enregistre sans elle.
+  let { error } = await supabase.from("visites").insert({ ...ligne, source: donnees.source || null, visiteur_id: donnees.visiteur || null });
+  // Colonnes "source" / "visiteur_id" pas encore creees (migration non appliquee) : on enregistre sans elles.
   if (error?.code === "PGRST204") ({ error } = await supabase.from("visites").insert(ligne));
   if (error) throw new Error(error.message);
 }
@@ -746,7 +750,7 @@ export async function enregistrerVisite(donnees: { page: string; pays?: string; 
 export async function getVisites(depuis: Date, jusqua: Date = new Date()): Promise<Visite[]> {
   const PAQUET = 1000;
   const MAXIMUM = 200000;
-  let colonnes = "id, page, pays, ville, source, created_at";
+  let colonnes = "id, page, pays, ville, ip, source, visiteur_id, created_at";
   const resultat: Visite[] = [];
 
   for (let debut = 0; debut < MAXIMUM; debut += PAQUET) {
@@ -757,9 +761,9 @@ export async function getVisites(depuis: Date, jusqua: Date = new Date()): Promi
       .lte("created_at", jusqua.toISOString())
       .order("created_at", { ascending: false })
       .range(debut, debut + PAQUET - 1);
-    // Colonne "source" pas encore creee : on relit sans elle.
-    if (error && colonnes.includes("source") && (error.code === "42703" || /source/.test(error.message))) {
-      colonnes = "id, page, pays, ville, created_at";
+    // Colonnes "source" / "visiteur_id" pas encore creees : on relit sans elles.
+    if (error && colonnes.includes("visiteur_id") && (error.code === "42703" || /source|visiteur_id/.test(error.message))) {
+      colonnes = "id, page, pays, ville, ip, created_at";
       debut -= PAQUET;
       continue;
     }
@@ -768,9 +772,10 @@ export async function getVisites(depuis: Date, jusqua: Date = new Date()): Promi
       resultat.push({
         id: d.id,
         page: d.page,
-        pays: d.pays || undefined,
+        pays: normaliserPays(d.pays) || undefined,
         ville: d.ville || undefined,
         source: d.source === "application" || d.source === "site" ? d.source : undefined,
+        visiteur: d.visiteur_id || (d.ip ? "ip:" + d.ip : "visite:" + d.id),
         createdAt: d.created_at,
       });
     }

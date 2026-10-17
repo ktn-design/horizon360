@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
 import { enregistrerVisite } from "@/lib/store";
+import { COOKIE_SESSION_ADMIN } from "@/lib/permissions";
+import { normaliserPays } from "@/lib/pays";
+
+// Pages suivies (voir useEnregistrerVisite) : tout autre nom est refuse.
+const PAGES_SUIVIES = new Set(["accueil", "maisons", "maison_detail", "salles", "salle_detail", "hotels", "hotel_detail"]);
+
+// Robots d'indexation, d'apercu de liens, outils de test... : jamais comptes comme visiteurs.
+const ROBOTS = /bot|crawl|spider|slurp|preview|headless|lighthouse|pagespeed|inspection|facebookexternalhit|whatsapp|telegram|vercel|python|curl|wget|axios|node-fetch|go-http|java\//i;
 
 function extraireIp(request: Request): string {
   const xForwardedFor = request.headers.get("x-forwarded-for");
@@ -18,10 +26,19 @@ function estIpPrivee(ip: string): boolean {
   );
 }
 
+function ignoree(raison: string) {
+  return NextResponse.json({ succes: true, ignoree: raison });
+}
+
 export async function POST(request: Request) {
   try {
-    const { page } = await request.json();
-    if (!page) return NextResponse.json({ erreur: "page manquante." }, { status: 400 });
+    const { page, visiteur } = await request.json();
+    if (!page || !PAGES_SUIVIES.has(page)) return NextResponse.json({ erreur: "page inconnue." }, { status: 400 });
+
+    const userAgent = request.headers.get("user-agent") || "";
+    if (!userAgent || ROBOTS.test(userAgent)) return ignoree("robot");
+    // Administrateur connecte sur cet appareil : ses propres visites ne comptent pas.
+    if (request.headers.get("cookie")?.includes(COOKIE_SESSION_ADMIN + "=")) return ignoree("administrateur");
 
     const ip = extraireIp(request);
     let pays: string | undefined;
@@ -29,12 +46,14 @@ export async function POST(request: Request) {
 
     if (!estIpPrivee(ip)) {
       try {
-        const reponse = await fetch("http://ip-api.com/json/" + ip + "?fields=status,country,city", {
+        const reponse = await fetch("http://ip-api.com/json/" + ip + "?fields=status,country,city,hosting", {
           signal: AbortSignal.timeout(3000),
         });
         const data = await reponse.json();
         if (data.status === "success") {
-          pays = data.country || undefined;
+          // Adresse d'un centre de donnees (Google, Microsoft, Amazon...) : robot, pas un visiteur.
+          if (data.hosting) return ignoree("centre de donnees");
+          pays = normaliserPays(data.country) || undefined;
           ville = data.city || undefined;
         }
       } catch {
@@ -43,8 +62,9 @@ export async function POST(request: Request) {
     }
 
     // L'application mobile ajoute "Horizon360App" a l'identifiant du navigateur.
-    const source = (request.headers.get("user-agent") || "").includes("Horizon360App") ? "application" : "site";
-    await enregistrerVisite({ page, pays, ville, ip: ip || undefined, source });
+    const source = userAgent.includes("Horizon360App") ? "application" : "site";
+    const idVisiteur = typeof visiteur === "string" && /^[a-z0-9-]{8,64}$/i.test(visiteur) ? visiteur : undefined;
+    await enregistrerVisite({ page, pays, ville, ip: ip || undefined, source, visiteur: idVisiteur });
 
     return NextResponse.json({ succes: true });
   } catch (error) {

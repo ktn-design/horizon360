@@ -156,9 +156,11 @@ export default function StatistiquesPage() {
       .slice(0, limite);
   }
 
+  // Visiteurs uniques : un appareil = un visiteur, quel que soit le nombre de pages vues.
+  const visiteurs = (liste: Visite[]) => new Set(liste.map((v) => v.visiteur)).size;
   const aujourdHui = cleJour(new Date());
-  const visitesAujourdhui = filtrees.filter((v) => cleJour(new Date(v.createdAt)) === aujourdHui).length;
-  const partApplication = filtrees.length ? Math.round((filtrees.filter((v) => v.source === "application").length / filtrees.length) * 100) : 0;
+  const visiteursAujourdhui = visiteurs(filtrees.filter((v) => cleJour(new Date(v.createdAt)) === aujourdHui));
+  const visiteursApplication = visiteurs(filtrees.filter((v) => v.source === "application"));
   const nbPays = new Set(filtrees.map((v) => v.pays).filter(Boolean)).size;
 
   return (
@@ -169,8 +171,9 @@ export default function StatistiquesPage() {
 
       <h1 className="mb-2 text-3xl font-bold">Statistiques de visite</h1>
       <p className="mb-6 text-sm text-slate-400">
-        Nombre de pages vues (chaque chargement de page compte, ce n&apos;est pas un nombre de visiteurs uniques). Aucune adresse IP
-        individuelle n&apos;est affichee ici.
+        <strong>Visiteurs uniques</strong> : nombre d&apos;appareils differents. <strong>Pages vues</strong> : chaque page ouverte compte.
+        Les robots (Google, Microsoft...), les appareils des administrateurs et les rechargements rapides de la meme page ne sont
+        pas comptes. Aucune adresse IP individuelle n&apos;est affichee ici.
       </p>
 
       {/* Periode */}
@@ -233,10 +236,10 @@ export default function StatistiquesPage() {
       ) : (
         <>
           <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <Chiffre libelle="Visites sur la periode" valeur={filtrees.length} />
-            <Chiffre libelle="Aujourd'hui" valeur={visitesAujourdhui} />
-            <Chiffre libelle="Moyenne par jour" valeur={Math.round((filtrees.length / nbJours) * 10) / 10} />
-            {aDesSources ? <Chiffre libelle="Depuis l'application" valeur={partApplication + " %"} /> : <Chiffre libelle="Pays differents" valeur={nbPays} />}
+            <Chiffre libelle="Visiteurs uniques" valeur={visiteurs(filtrees)} />
+            <Chiffre libelle="Pages vues" valeur={filtrees.length} />
+            <Chiffre libelle="Visiteurs aujourd'hui" valeur={visiteursAujourdhui} />
+            {aDesSources ? <Chiffre libelle="Visiteurs via l'application" valeur={visiteursApplication} /> : <Chiffre libelle="Pays differents" valeur={nbPays} />}
           </div>
 
           <div className="mb-8 rounded-xl bg-slate-800 p-6">

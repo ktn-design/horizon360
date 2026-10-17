@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ProfilAdmin, peutOuvrirPage } from "@/lib/permissions";
 import { chargerMonProfilAdmin, deconnecterAdmin, synchroniserCookieAdmin } from "@/lib/sessionAdmin";
+import { marquerAppareilInterne } from "@/lib/useEnregistrerVisite";
 
 const ProfilAdminContext = createContext<ProfilAdmin | null>(null);
 
@@ -52,6 +53,8 @@ export default function GardeAdmin({ children }: { children: React.ReactNode }) 
         window.location.replace("/admin/dashboard?refus=1");
         return;
       }
+      // Appareil d'un administrateur : ses visites du site ne gonflent plus les statistiques.
+      marquerAppareilInterne();
       setProfil(p);
     }
 
