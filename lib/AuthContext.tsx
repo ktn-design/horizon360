@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { User } from "@supabase/supabase-js";
+import { connexionGoogleApp, ecouterRetourConnexionApp, estAppMobile } from "./appMobile";
 
 interface AuthContextType {
   user: User | null;
@@ -29,12 +30,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user || null);
     });
 
+    // Application mobile : la connexion Google revient par un lien com.hrz360.app://auth.
+    let arreterEcoute: (() => void) | undefined;
+    let demonte = false;
+    if (estAppMobile()) {
+      ecouterRetourConnexionApp().then((arreter) => {
+        if (demonte) arreter();
+        else arreterEcoute = arreter;
+      });
+    }
+
     return () => {
+      demonte = true;
       listener.subscription.unsubscribe();
+      arreterEcoute?.();
     };
   }, []);
 
   async function connexionGoogle() {
+    if (estAppMobile()) {
+      await connexionGoogleApp();
+      return;
+    }
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
