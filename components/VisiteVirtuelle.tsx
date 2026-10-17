@@ -8,6 +8,7 @@ import "@photo-sphere-viewer/core/index.css";
 import "@photo-sphere-viewer/markers-plugin/index.css";
 import { Panorama360 } from "@/types";
 import { sourceAffichage } from "@/lib/panoramaStereo";
+import Link from "next/link";
 
 export interface Hotspot {
   id: string;
@@ -24,6 +25,8 @@ interface VisiteVirtuelleProps {
   // vers laquelle mene chaque repere, ainsi que la piece actuelle.
   panoramas?: Panorama360[];
   onChangerPanorama: (nouvellePanoramaUrl: string) => void;
+  // Page de la fiche, pour le bouton « Quitter la visite » (en haut a gauche, a cote de « Voir en VR »).
+  adresseQuitter: string;
 }
 
 // Icones au trait (style Lucide, licence ISC), dessinees en blanc sur les reperes.
@@ -112,6 +115,7 @@ export default function VisiteVirtuelle({
   hotspots,
   panoramas = AUCUNE_PIECE,
   onChangerPanorama,
+  adresseQuitter,
 }: VisiteVirtuelleProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
@@ -334,12 +338,17 @@ export default function VisiteVirtuelle({
         </div>
       )}
 
-      {vrPossible && (
-        <button type="button" onClick={ouvrirVR} disabled={enVR} className="h360-bouton-vr">
-          <span dangerouslySetInnerHTML={{ __html: svg("casque") }} />
-          {enVR ? "Visite en cours dans le casque" : "Voir en VR"}
-        </button>
-      )}
+      <div className="h360-barre-haut">
+        <Link href={adresseQuitter} className="h360-bouton-quitter">
+          Quitter la visite
+        </Link>
+        {vrPossible && (
+          <button type="button" onClick={ouvrirVR} disabled={enVR} className="h360-bouton-vr">
+            <span dangerouslySetInnerHTML={{ __html: svg("casque") }} />
+            {enVR ? "Visite en cours dans le casque" : "Voir en VR"}
+          </button>
+        )}
+      </div>
 
       {gyroDisponible && (
         <button
@@ -477,15 +486,34 @@ const STYLES = `
   background: rgba(255, 255, 255, .92);
   color: #0f172a;
 }
-.h360-bouton-vr {
+.h360-barre-haut {
   position: absolute;
+  top: max(16px, env(safe-area-inset-top));
   left: 16px;
-  bottom: calc(64px + env(safe-area-inset-bottom));
-  z-index: 10;
+  z-index: 20;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  padding: 14px 22px;
+  max-width: calc(100% - 32px);
+}
+.h360-bouton-quitter {
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, .5);
+  border: 1px solid rgba(255, 255, 255, .2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+.h360-bouton-quitter:hover { background: rgba(15, 23, 42, .7); }
+.h360-bouton-vr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
   border-radius: 999px;
   background: #2563eb;
   border: 1px solid rgba(255, 255, 255, .35);
