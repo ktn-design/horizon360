@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getParametres } from "@/lib/store";
 import { ParametresSite } from "@/types";
+import { HOTELS_VISIBLES } from "@/lib/fonctionnalites";
 
 export default function Footer() {
   const [parametres, setParametres] = useState<ParametresSite | null>(null);
@@ -38,7 +39,7 @@ export default function Footer() {
           <h3 className="mb-3 text-lg font-bold text-white">Liens</h3>
           <div className="flex flex-col gap-2 text-sm">
             <Link href="/maisons" className="hover:text-blue-400">Maisons</Link>
-            <Link href="/hotels" className="hover:text-blue-400">Hotels</Link>
+            {HOTELS_VISIBLES && <Link href="/hotels" className="hover:text-blue-400">Hotels</Link>}
             <Link href="/salles" className="hover:text-blue-400">Salles</Link>
             <Link href="/recherche" className="hover:text-blue-400">Recherche</Link>
             <Link href="/contact" className="hover:text-blue-400">Nous contacter</Link>

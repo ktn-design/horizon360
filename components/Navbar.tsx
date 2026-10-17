@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/LanguageContext";
 import { useAuth } from "@/lib/AuthContext";
 import ModalConnexion from "./ModalConnexion";
+import { HOTELS_VISIBLES } from "@/lib/fonctionnalites";
 
 export default function Navbar() {
   const { langue, changerLangue, t } = useLanguage();
@@ -18,7 +19,7 @@ export default function Navbar() {
       </Link>
       <div className="flex flex-wrap items-center gap-6 text-sm">
         <Link href="/maisons" className="hover:text-blue-400">{t("accueil_maisons")}</Link>
-        <Link href="/hotels" className="hover:text-blue-400">{t("accueil_hotels")}</Link>
+        {HOTELS_VISIBLES && <Link href="/hotels" className="hover:text-blue-400">{t("accueil_hotels")}</Link>}
         <Link href="/salles" className="hover:text-blue-400">{t("accueil_salles")}</Link>
         <Link href="/societes" className="hover:text-blue-400">{t("nav_partenaires")}</Link>
         <Link href="/recherche" className="hover:text-blue-400">{t("nav_recherche")}</Link>

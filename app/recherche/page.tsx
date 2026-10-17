@@ -6,6 +6,7 @@ import { getMaisons, getHotels } from "@/lib/store";
 import SelectPays from "@/components/SelectPays";
 import { Maison, Hotel } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
+import { HOTELS_VISIBLES } from "@/lib/fonctionnalites";
 
 export default function RecherchePage() {
   const { t } = useLanguage();
@@ -22,7 +23,7 @@ export default function RecherchePage() {
     e.preventDefault();
     setEnCours(true);
 
-    const [toutesMaisons, tousHotels] = await Promise.all([getMaisons(), getHotels()]);
+    const [toutesMaisons, tousHotels] = await Promise.all([getMaisons(), HOTELS_VISIBLES ? getHotels() : Promise.resolve([] as Hotel[])]);
 
     const maisons = toutesMaisons.filter((m) => {
       const matchPays = pays === "" || m.localisation.pays.toLowerCase().includes(pays.toLowerCase());
@@ -81,16 +82,20 @@ export default function RecherchePage() {
             ))}
           </div>
 
-          <h2 className="mb-4 text-xl font-semibold">{t("accueil_hotels")} ({resultatsHotels.length})</h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {resultatsHotels.map((hotel) => (
-              <Link key={hotel.id} href={"/hotels/" + hotel.id} className="rounded-xl bg-slate-800 p-5 hover:bg-slate-700">
-                <h3 className="mb-1 font-semibold">{hotel.titre}</h3>
-                <p className="text-sm text-slate-300">{hotel.localisation.ville}, {hotel.localisation.province}, {hotel.localisation.pays}</p>
-                <p className="mt-2 text-sm font-semibold text-blue-400">{t("hotels_voir_chambres")} →</p>
-              </Link>
-            ))}
-          </div>
+          {HOTELS_VISIBLES && (
+            <>
+              <h2 className="mb-4 text-xl font-semibold">{t("accueil_hotels")} ({resultatsHotels.length})</h2>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {resultatsHotels.map((hotel) => (
+                  <Link key={hotel.id} href={"/hotels/" + hotel.id} className="rounded-xl bg-slate-800 p-5 hover:bg-slate-700">
+                    <h3 className="mb-1 font-semibold">{hotel.titre}</h3>
+                    <p className="text-sm text-slate-300">{hotel.localisation.ville}, {hotel.localisation.province}, {hotel.localisation.pays}</p>
+                    <p className="mt-2 text-sm font-semibold text-blue-400">{t("hotels_voir_chambres")} →</p>
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
 
           {resultatsMaisons.length === 0 && resultatsHotels.length === 0 && (
             <p className="text-slate-400">{t("recherche_aucun_resultat")}</p>

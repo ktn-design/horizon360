@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripeServeur";
+import { HOTELS_VISIBLES, PAIEMENT_EN_LIGNE_ACTIF } from "@/lib/fonctionnalites";
 import { getHotelParId, getSalleParId, getChambreParId, getReservationsParBien } from "@/lib/store";
 import { periodeHotelDisponible, creneauSalleDisponible } from "@/lib/disponibilite";
 import { calculerExtras, extraParPersonne, lireExtrasIds, lireNombrePersonnes, nombreNuits, ExtraChoisi } from "@/lib/prix";
 
 export async function POST(request: Request) {
+  // Paiement en ligne desactive (lib/fonctionnalites.ts) : seul le paiement sur place est propose.
+  if (!PAIEMENT_EN_LIGNE_ACTIF) {
+    return NextResponse.json({ erreur: "Le paiement en ligne n'est pas encore disponible. Choisissez le paiement sur place." }, { status: 503 });
+  }
+  if (!HOTELS_VISIBLES && (await request.clone().json().catch(() => ({}))).typeBien === "hotel") {
+    return NextResponse.json({ erreur: "La reservation d'hotels n'est pas encore ouverte." }, { status: 503 });
+  }
+
   try {
     const body = await request.json();
     const { typeBien, bienId, chambreId, nomClient, emailClient, telephoneClient, dateDebut, dateFin, creneau, message } = body;

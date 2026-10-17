@@ -1,12 +1,23 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { COOKIE_SESSION_ADMIN, peutOuvrirPage, profilDepuisJeton } from "@/lib/permissions";
+import { HOTELS_VISIBLES } from "@/lib/fonctionnalites";
 
 // Protection serveur de toutes les pages /admin (Next.js 16 : "proxy" = ancien "middleware").
 // Avant d'envoyer la moindre page admin, on verifie aupres de Supabase que la session est
 // valide, que le compte est administrateur, qu'il n'est pas gele et qu'il a acces a la section.
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+
+  // Section Hotels masquee aux clients (lib/fonctionnalites.ts) : retour a l'accueil,
+  // y compris pour les anciens liens partages.
+  if (!HOTELS_VISIBLES && /^\/(hotels|chambres)(\/|$)/.test(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    return sansCache(NextResponse.redirect(url));
+  }
+  if (!/^\/admin(\/|$)/.test(pathname)) return NextResponse.next();
 
   // L'application mobile est reservee aux clients : pas d'administration (voir mobile/capacitor.config.ts).
   if ((request.headers.get("user-agent") || "").includes("Horizon360App")) {
@@ -64,5 +75,5 @@ function sansCache(reponse: NextResponse) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*"],
+  matcher: ["/admin", "/admin/:path*", "/hotels", "/hotels/:path*", "/chambres", "/chambres/:path*"],
 };

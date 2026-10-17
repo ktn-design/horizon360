@@ -9,6 +9,7 @@ import ModalConnexion from "./ModalConnexion";
 import ChoixExtras from "./ChoixExtras";
 import { Extra } from "@/types";
 import { calculerExtras, extraParPersonne } from "@/lib/prix";
+import { PAIEMENT_EN_LIGNE_ACTIF } from "@/lib/fonctionnalites";
 
 interface ReservationSalleProps {
   salleId: string;
@@ -29,7 +30,7 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
   const [extrasSalle, setExtrasSalle] = useState<Extra[]>([]);
   const [extrasIds, setExtrasIds] = useState<string[]>([]);
   const [nombrePersonnes, setNombrePersonnes] = useState(1);
-  const [modePaiement, setModePaiement] = useState<"carte" | "sur_place">("carte");
+  const [modePaiement, setModePaiement] = useState<"carte" | "sur_place">(PAIEMENT_EN_LIGNE_ACTIF ? "carte" : "sur_place");
   const [envoye, setEnvoye] = useState(false);
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState("");
@@ -64,7 +65,7 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
       if (d.nom) setNom(d.nom);
       if (d.telephone) setTelephone(d.telephone);
       if (d.message) setMessage(d.message);
-      if (d.modePaiement) setModePaiement(d.modePaiement);
+      if (d.modePaiement && (PAIEMENT_EN_LIGNE_ACTIF || d.modePaiement !== "carte")) setModePaiement(d.modePaiement);
       if (Array.isArray(d.extrasIds)) setExtrasIds(d.extrasIds);
       if (d.nombrePersonnes) setNombrePersonnes(d.nombrePersonnes);
     } catch {
@@ -268,10 +269,12 @@ export default function ReservationSalle({ salleId }: ReservationSalleProps) {
         <div>
           <label className="mb-2 block text-sm text-slate-300">{t("resa_mode_paiement")}</label>
           <div className="space-y-2">
-            <label className="flex items-center gap-2 rounded-lg bg-slate-700 p-3 text-sm">
-              <input type="radio" name="modePaiement" value="carte" checked={modePaiement === "carte"} onChange={() => setModePaiement("carte")} />
-              {t("resa_payer_carte")}
-            </label>
+            {PAIEMENT_EN_LIGNE_ACTIF && (
+              <label className="flex items-center gap-2 rounded-lg bg-slate-700 p-3 text-sm">
+                <input type="radio" name="modePaiement" value="carte" checked={modePaiement === "carte"} onChange={() => setModePaiement("carte")} />
+                {t("resa_payer_carte")}
+              </label>
+            )}
             <label className="flex items-center gap-2 rounded-lg bg-slate-700 p-3 text-sm">
               <input type="radio" name="modePaiement" value="sur_place" checked={modePaiement === "sur_place"} onChange={() => setModePaiement("sur_place")} />
               {t("resa_payer_place")}

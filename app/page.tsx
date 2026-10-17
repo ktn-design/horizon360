@@ -7,6 +7,7 @@ import { ParametresSite } from "@/types";
 import Diaporama from "@/components/Diaporama";
 import { useLanguage } from "@/lib/LanguageContext";
 import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
+import { HOTELS_VISIBLES } from "@/lib/fonctionnalites";
 
 export default function Home() {
   const { t } = useLanguage();
@@ -83,13 +84,15 @@ export default function Home() {
             <span className="text-2xl font-bold text-white drop-shadow-lg">{t("accueil_maisons")}</span>
           </Link>
 
-          <Link
-            href="/hotels"
-            style={styleCarteHotels}
-            className="flex h-48 w-64 flex-col items-center justify-center rounded-2xl p-8 shadow-xl transition hover:scale-105"
-          >
-            <span className="text-2xl font-bold text-white drop-shadow-lg">{t("accueil_hotels")}</span>
-          </Link>
+          {HOTELS_VISIBLES && (
+            <Link
+              href="/hotels"
+              style={styleCarteHotels}
+              className="flex h-48 w-64 flex-col items-center justify-center rounded-2xl p-8 shadow-xl transition hover:scale-105"
+            >
+              <span className="text-2xl font-bold text-white drop-shadow-lg">{t("accueil_hotels")}</span>
+            </Link>
+          )}
 
           <Link
             href="/salles"
