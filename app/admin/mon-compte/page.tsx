@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useProfilAdmin } from "@/components/GardeAdmin";
+import ChampMotDePasse from "@/components/ChampMotDePasse";
 
 export default function MonCompteAdminPage() {
   const profil = useProfilAdmin();
@@ -53,8 +54,7 @@ export default function MonCompteAdminPage() {
       <p className="mb-8 text-slate-400">{profil.email}</p>
 
       <form onSubmit={handleSubmit} className="max-w-md space-y-4 rounded-xl bg-slate-800 p-6">
-        <input
-          type="password"
+        <ChampMotDePasse
           required
           autoComplete="current-password"
           placeholder="Mot de passe actuel"
@@ -62,8 +62,7 @@ export default function MonCompteAdminPage() {
           onChange={(e) => setActuel(e.target.value)}
           className="input"
         />
-        <input
-          type="password"
+        <ChampMotDePasse
           required
           autoComplete="new-password"
           placeholder="Nouveau mot de passe (8 caracteres minimum)"
@@ -71,8 +70,7 @@ export default function MonCompteAdminPage() {
           onChange={(e) => setNouveau(e.target.value)}
           className="input"
         />
-        <input
-          type="password"
+        <ChampMotDePasse
           required
           autoComplete="new-password"
           placeholder="Confirmer le nouveau mot de passe"

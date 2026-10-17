@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getHotelParId, getPartenaireApiParHotel, sauvegarderPartenaireApi, HotelPartenaireApi } from "@/lib/store";
 import { texteErreur } from "@/lib/erreurs";
+import ChampMotDePasse from "@/components/ChampMotDePasse";
 
 export default function ApiPmsHotelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: hotelId } = use(params);
@@ -103,11 +104,10 @@ export default function ApiPmsHotelPage({ params }: { params: Promise<{ id: stri
 
         <div>
           <label className="mb-1 block text-sm text-slate-300">Cle API</label>
-          <input
+          <ChampMotDePasse
             value={form.cleApi}
             onChange={(e) => champ("cleApi", e.target.value)}
             className="input"
-            type="password"
             placeholder="Cle secrete fournie par le partenaire"
           />
         </div>

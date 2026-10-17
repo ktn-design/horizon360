@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { chargerMonProfilAdmin, synchroniserCookieAdmin } from "@/lib/sessionAdmin";
+import ChampMotDePasse from "@/components/ChampMotDePasse";
 
 const MESSAGES_ARRIVEE: Record<string, string> = {
   session: "Veuillez vous connecter pour acceder a l'administration.",
@@ -98,14 +99,15 @@ export default function AdminLoginPage() {
         />
 
         <label className="mb-2 block text-sm text-slate-300">Mot de passe</label>
-        <input
-          type="password"
-          required
-          autoComplete="current-password"
-          value={motDePasse}
-          onChange={(e) => setMotDePasse(e.target.value)}
-          className="mb-4 w-full rounded-lg bg-slate-700 px-4 py-3 text-white outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="mb-4">
+          <ChampMotDePasse
+            required
+            autoComplete="current-password"
+            value={motDePasse}
+            onChange={(e) => setMotDePasse(e.target.value)}
+            className="w-full rounded-lg bg-slate-700 px-4 py-3 text-white outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
         {erreur && <p className="mb-4 text-sm text-red-400">{erreur}</p>}
 
