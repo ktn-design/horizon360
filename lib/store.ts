@@ -713,38 +713,66 @@ export async function sauvegarderPartenaireApi(partenaire: HotelPartenaireApi) {
   if (error) throw new Error(messageErreurBase(error, "la connexion PMS"));
 }
 
+export type SourceVisite = "site" | "application";
+
 export interface Visite {
   id: string;
   page: string;
   pays?: string;
   ville?: string;
+  // Absente pour les visites enregistrees avant la migration 20261017_maquettes_3d.sql.
+  source?: SourceVisite;
   createdAt: string;
 }
 
-export async function enregistrerVisite(donnees: { page: string; pays?: string; ville?: string; ip?: string }) {
-  const { error } = await supabase.from("visites").insert({
+export async function enregistrerVisite(donnees: { page: string; pays?: string; ville?: string; ip?: string; source?: SourceVisite }) {
+  const ligne = {
     id: Date.now().toString() + "-" + Math.random().toString(36).slice(2, 8),
     page: donnees.page,
     pays: donnees.pays || null,
     ville: donnees.ville || null,
     ip: donnees.ip || null,
-  });
+  };
+  let { error } = await supabase.from("visites").insert({ ...ligne, source: donnees.source || null });
+  // Colonne "source" pas encore creee (migration non appliquee) : on enregistre sans elle.
+  if (error?.code === "PGRST204") ({ error } = await supabase.from("visites").insert(ligne));
   if (error) throw new Error(error.message);
 }
 
-export async function getVisites(depuisJours: number = 90): Promise<Visite[]> {
-  const depuis = new Date(Date.now() - depuisJours * 24 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await supabase
-    .from("visites")
-    .select("id, page, pays, ville, created_at")
-    .gte("created_at", depuis)
-    .order("created_at", { ascending: false });
-  if (error || !data) return [];
-  return data.map((d: any) => ({
-    id: d.id,
-    page: d.page,
-    pays: d.pays || undefined,
-    ville: d.ville || undefined,
-    createdAt: d.created_at,
-  }));
+// Visites entre deux dates (incluses). Lues par paquets de 1000 : Supabase n'en renvoie
+// pas plus en une fois, sinon les statistiques seraient fausses au-dela de 1000 visites.
+export async function getVisites(depuis: Date, jusqua: Date = new Date()): Promise<Visite[]> {
+  const PAQUET = 1000;
+  const MAXIMUM = 200000;
+  let colonnes = "id, page, pays, ville, source, created_at";
+  const resultat: Visite[] = [];
+
+  for (let debut = 0; debut < MAXIMUM; debut += PAQUET) {
+    const { data, error } = await supabase
+      .from("visites")
+      .select(colonnes)
+      .gte("created_at", depuis.toISOString())
+      .lte("created_at", jusqua.toISOString())
+      .order("created_at", { ascending: false })
+      .range(debut, debut + PAQUET - 1);
+    // Colonne "source" pas encore creee : on relit sans elle.
+    if (error && colonnes.includes("source") && (error.code === "42703" || /source/.test(error.message))) {
+      colonnes = "id, page, pays, ville, created_at";
+      debut -= PAQUET;
+      continue;
+    }
+    if (error || !data) break;
+    for (const d of data as any[]) {
+      resultat.push({
+        id: d.id,
+        page: d.page,
+        pays: d.pays || undefined,
+        ville: d.ville || undefined,
+        source: d.source === "application" || d.source === "site" ? d.source : undefined,
+        createdAt: d.created_at,
+      });
+    }
+    if (data.length < PAQUET) break;
+  }
+  return resultat;
 }

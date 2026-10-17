@@ -42,7 +42,9 @@ export async function POST(request: Request) {
       }
     }
 
-    await enregistrerVisite({ page, pays, ville, ip: ip || undefined });
+    // L'application mobile ajoute "Horizon360App" a l'identifiant du navigateur.
+    const source = (request.headers.get("user-agent") || "").includes("Horizon360App") ? "application" : "site";
+    await enregistrerVisite({ page, pays, ville, ip: ip || undefined, source });
 
     return NextResponse.json({ succes: true });
   } catch (error) {

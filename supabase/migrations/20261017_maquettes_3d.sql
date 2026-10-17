@@ -1,5 +1,6 @@
 -- =====================================================================
--- Horizon 360 : maquettes 3D (fichiers .glb) pour les maisons et les salles
+-- Horizon 360 : maquettes 3D (fichiers .glb) pour les maisons et les salles,
+--               et provenance des visites (site / application) pour les statistiques
 -- =====================================================================
 -- A coller tel quel dans Supabase > SQL Editor, puis "Run".
 -- Script idempotent : il peut etre relance sans risque, il ne supprime aucune donnee.
@@ -30,6 +31,10 @@ drop policy if exists "Admins suppriment des maquettes" on storage.objects;
 create policy "Admins suppriment des maquettes" on storage.objects
   for delete to authenticated
   using (bucket_id = 'maquettes' and (public.a_permission('maisons') or public.a_permission('salles')));
+
+-- 3. Statistiques : provenance de chaque visite ('site' ou 'application' mobile).
+alter table public.visites add column if not exists source text;
+create index if not exists visites_created_at_idx on public.visites (created_at desc);
 
 commit;
 
