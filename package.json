@@ -12,6 +12,7 @@
     "@capacitor/app": "^8.1.2",
     "@capacitor/browser": "^8.0.5",
     "@capacitor/core": "^8.5.3",
+    "@capgo/capacitor-social-login": "^8.5.19",
     "@photo-sphere-viewer/core": "^5.14.3",
     "@photo-sphere-viewer/gyroscope-plugin": "^5.14.3",
     "@photo-sphere-viewer/markers-plugin": "^5.14.3",

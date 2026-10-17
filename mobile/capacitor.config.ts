@@ -22,6 +22,13 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
   },
+  plugins: {
+    // Connexion Google native (liste des comptes du telephone) ; les autres fournisseurs
+    // ne sont pas inclus dans l'application.
+    SocialLogin: {
+      providers: { google: true, facebook: false, apple: false, twitter: false },
+    },
+  },
 };
 
 export default config;
