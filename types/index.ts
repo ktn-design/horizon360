@@ -153,13 +153,27 @@ export interface Societe {
   telephone: string;
 }
 
+// Repere pose sur la maquette 3D d'un immeuble : situe un appartement (une « maison »
+// rattachee a l'immeuble). position / normal : coordonnees 3D au format de model-viewer ("x y z").
+export interface RepereMaquette {
+  id: string;
+  maisonId: string;
+  libelle: string;
+  position: string;
+  normal: string;
+}
+
 export interface Immeuble {
   id: string;
   societeId: string;
   nom: string;
   description: string;
   localisation: Localisation;
+  // La premiere photo sert de photo d'accueil.
   photos: string[];
+  // Maquette 3D de l'immeuble (.glb) et reperes des appartements ; facultatifs.
+  maquette3dUrl?: string;
+  reperesMaquette?: RepereMaquette[];
 }
 
 export interface Chambre {

@@ -1,9 +1,9 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { getMaisonParId } from "@/lib/store";
+import { getImmeubleParId, getMaisonParId } from "@/lib/store";
 import { notFound } from "next/navigation";
-import VisiteVirtuelle from "@/components/VisiteVirtuelle";
+import VisiteVirtuelle, { EmplacementAppartement } from "@/components/VisiteVirtuelle";
 import { Maison } from "@/types";
 
 export default function VisitePage({ params }: { params: Promise<{ id: string }> }) {
@@ -11,6 +11,7 @@ export default function VisitePage({ params }: { params: Promise<{ id: string }>
   const [maison, setMaison] = useState<Maison | null>(null);
   const [charge, setCharge] = useState(false);
   const [panoramaActuel, setPanoramaActuel] = useState("");
+  const [emplacement, setEmplacement] = useState<EmplacementAppartement | undefined>();
 
   useEffect(() => {
     async function charger() {
@@ -22,6 +23,16 @@ export default function VisitePage({ params }: { params: Promise<{ id: string }>
         if (defaut) setPanoramaActuel(defaut);
       }
       setCharge(true);
+
+      // Appartement situe sur la maquette de son immeuble : bouton « Situer l'appartement ».
+      // Le visiteur ne voit que le repere de CET appartement.
+      if (m?.immeubleId) {
+        const immeuble = await getImmeubleParId(m.immeubleId);
+        const repere = immeuble?.reperesMaquette?.find((r) => r.maisonId === m.id);
+        if (immeuble?.maquette3dUrl && repere) {
+          setEmplacement({ maquetteUrl: immeuble.maquette3dUrl, nomImmeuble: immeuble.nom, repere });
+        }
+      }
     }
     charger();
   }, [id]);
@@ -41,6 +52,7 @@ export default function VisitePage({ params }: { params: Promise<{ id: string }>
         hotspots={hotspotsActuels}
         panoramas={panoramas}
         onChangerPanorama={setPanoramaActuel}
+        emplacement={emplacement}
       />
     </main>
   );

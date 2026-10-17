@@ -156,9 +156,17 @@ export default function ImmeublesAdminPage({ params }: { params: Promise<{ id: s
               <p className="font-semibold">{immeuble.nom}</p>
               <p className="text-sm text-slate-400">{immeuble.localisation.ville}, {immeuble.localisation.province}</p>
             </div>
-            <button onClick={() => handleSupprimer(immeuble.id)} className="rounded-lg bg-red-600 px-4 py-2 text-sm hover:bg-red-700">
-              Supprimer
-            </button>
+            <div className="flex gap-2">
+              <Link
+                href={"/admin/societes/" + societeId + "/immeubles/" + immeuble.id}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold hover:bg-blue-700"
+              >
+                Modifier (photos, maquette 3D, reperes)
+              </Link>
+              <button onClick={() => handleSupprimer(immeuble.id)} className="rounded-lg bg-red-600 px-4 py-2 text-sm hover:bg-red-700">
+                Supprimer
+              </button>
+            </div>
           </div>
         ))}
       </div>

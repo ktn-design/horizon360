@@ -304,34 +304,32 @@ export async function supprimerSociete(id: string) {
   rafraichirSitePublic();
 }
 
+function dbVersImmeuble(d: any): Immeuble {
+  return {
+    id: d.id, societeId: d.societe_id, nom: d.nom, description: d.description,
+    localisation: { pays: d.pays, province: d.province, ville: d.ville, quartier: d.quartier || undefined },
+    photos: d.photos || [],
+    maquette3dUrl: d.maquette_3d_url ?? undefined,
+    reperesMaquette: d.reperes_maquette ?? undefined,
+  };
+}
+
 export async function getImmeubles(): Promise<Immeuble[]> {
   const { data, error } = await supabase.from("immeubles").select("*").order("created_at", { ascending: false });
   if (error || !data) return [];
-  return data.map((d: any) => ({
-    id: d.id, societeId: d.societe_id, nom: d.nom, description: d.description,
-    localisation: { pays: d.pays, province: d.province, ville: d.ville, quartier: d.quartier || undefined },
-    photos: d.photos || [],
-  }));
+  return data.map(dbVersImmeuble);
 }
 
 export async function getImmeublesParSociete(societeId: string): Promise<Immeuble[]> {
-  const { data, error } = await supabase.from("immeubles").select("*").eq("societe_id", societeId);
+  const { data, error } = await supabase.from("immeubles").select("*").eq("societe_id", societeId).order("created_at", { ascending: false });
   if (error || !data) return [];
-  return data.map((d: any) => ({
-    id: d.id, societeId: d.societe_id, nom: d.nom, description: d.description,
-    localisation: { pays: d.pays, province: d.province, ville: d.ville, quartier: d.quartier || undefined },
-    photos: d.photos || [],
-  }));
+  return data.map(dbVersImmeuble);
 }
 
 export async function getImmeubleParId(id: string): Promise<Immeuble | undefined> {
   const { data, error } = await supabase.from("immeubles").select("*").eq("id", id).single();
   if (error || !data) return undefined;
-  return {
-    id: data.id, societeId: data.societe_id, nom: data.nom, description: data.description,
-    localisation: { pays: data.pays, province: data.province, ville: data.ville, quartier: data.quartier || undefined },
-    photos: data.photos || [],
-  };
+  return dbVersImmeuble(data);
 }
 
 export async function sauvegarderImmeuble(immeuble: Immeuble) {
@@ -340,6 +338,10 @@ export async function sauvegarderImmeuble(immeuble: Immeuble) {
     pays: immeuble.localisation.pays, province: immeuble.localisation.province,
     ville: immeuble.localisation.ville, quartier: immeuble.localisation.quartier || null,
     photos: immeuble.photos,
+    // Colonnes de la migration 20261018_immeubles_maquettes.sql : envoyees seulement si renseignees,
+    // pour que les immeubles s'enregistrent meme avant la migration.
+    ...colonneMaquette3d(immeuble.maquette3dUrl),
+    ...(immeuble.reperesMaquette === undefined ? {} : { reperes_maquette: immeuble.reperesMaquette }),
   });
   if (error) throw new Error(messageErreurBase(error, "l'immeuble"));
   rafraichirSitePublic();

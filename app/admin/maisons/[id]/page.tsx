@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getMaisonParId, sauvegarderMaison, supprimerMaison } from "@/lib/store";
+import { getMaisonParId, getImmeubles, sauvegarderMaison, supprimerMaison } from "@/lib/store";
 import { uploaderPhoto } from "@/lib/imageUtils";
 import { Maison } from "@/types";
 import { texteErreur } from "@/lib/erreurs";
@@ -14,6 +14,8 @@ export default function ModifierMaisonPage({ params }: { params: Promise<{ id: s
   const [charge, setCharge] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [maquette3dUrl, setMaquette3dUrl] = useState<string | undefined>(undefined);
+  const [immeubleId, setImmeubleId] = useState("");
+  const [immeubles, setImmeubles] = useState<{ id: string; nom: string }[]>([]);
   const [enCours, setEnCours] = useState(false);
   const [maisonExistante, setMaisonExistante] = useState<Maison | null>(null);
 
@@ -71,6 +73,8 @@ export default function ModifierMaisonPage({ params }: { params: Promise<{ id: s
         });
         setPhotos(maison.photos || []);
         setMaquette3dUrl(maison.maquette3dUrl);
+        setImmeubleId(maison.immeubleId || "");
+        getImmeubles().then((im) => setImmeubles(im.map((i) => ({ id: i.id, nom: i.nom }))));
       }
       setCharge(true);
     }
@@ -135,7 +139,7 @@ export default function ModifierMaisonPage({ params }: { params: Promise<{ id: s
       photos: photos,
       panorama360Url: maisonExistante?.panorama360Url,
       panoramas: maisonExistante?.panoramas,
-      immeubleId: maisonExistante?.immeubleId,
+      immeubleId: immeubleId || undefined,
       contact: {
         whatsapp: form.whatsapp,
         telephone: form.telephone,
@@ -262,6 +266,16 @@ export default function ModifierMaisonPage({ params }: { params: Promise<{ id: s
           <Champ label="Telephone">
             <input required value={form.telephone} onChange={(e) => champ("telephone", e.target.value)} className="input" />
           </Champ>
+        </div>
+
+        <div className="rounded-xl bg-slate-800 p-5">
+          <label className="mb-1 block text-sm text-slate-300">Immeuble (appartement d&apos;un projet de promoteur)</label>
+          <select value={immeubleId} onChange={(e) => setImmeubleId(e.target.value)} className="input">
+            <option value="">Aucun (maison independante)</option>
+            {immeubles.map((im) => (
+              <option key={im.id} value={im.id}>{im.nom}</option>
+            ))}
+          </select>
         </div>
 
         <EditeurMaquette3D url={maquette3dUrl} onChange={setMaquette3dUrl} />
