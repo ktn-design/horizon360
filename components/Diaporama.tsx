@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { imageOptimisee } from "@/lib/imageOptimisee";
 
 interface DiaporamaProps {
   images: string[];
@@ -27,7 +28,7 @@ export default function Diaporama({ images }: DiaporamaProps) {
           style={{
             position: "absolute",
             inset: 0,
-            backgroundImage: `linear-gradient(rgba(15,23,42,0.7), rgba(15,23,42,0.9)), url(${image})`,
+            backgroundImage: `linear-gradient(rgba(15,23,42,0.7), rgba(15,23,42,0.9)), url(${imageOptimisee(image, 1200)})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             opacity: i === indexActif ? 1 : 0,

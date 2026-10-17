@@ -8,6 +8,7 @@ import { Hotel } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import AssistantDeco from "@/components/AssistantDeco";
 import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
+import { imageOptimisee } from "@/lib/imageOptimisee";
 
 export default function HotelDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -43,7 +44,7 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
         <div className="lg:col-span-2">
           <div className="mb-3 aspect-video overflow-hidden rounded-xl bg-slate-800">
             {hotel.photos.length > 0 ? (
-              <img src={hotel.photos[photoActive]} alt={hotel.titre} className="h-full w-full object-cover" />
+              <img src={imageOptimisee(hotel.photos[photoActive], 1200)} alt={hotel.titre} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center text-slate-500">{t("aucune_photo")}</div>
             )}
@@ -57,7 +58,7 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
                   onClick={() => setPhotoActive(i)}
                   className={i === photoActive ? "h-16 w-24 overflow-hidden rounded-lg border-2 border-blue-500" : "h-16 w-24 overflow-hidden rounded-lg border-2 border-transparent"}
                 >
-                  <img src={photo} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                  <img src={imageOptimisee(photo, 256)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
@@ -99,7 +100,7 @@ export default function HotelDetailPage({ params }: { params: Promise<{ id: stri
                   >
                     <div className="aspect-video w-full overflow-hidden bg-slate-700">
                       {chambre.photos.length > 0 ? (
-                        <img src={chambre.photos[0]} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                        <img src={imageOptimisee(chambre.photos[0], 640)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                       ) : (
                         <div className="flex h-full items-center justify-center text-sm text-slate-500">{t("aucune_photo")}</div>
                       )}

@@ -8,6 +8,7 @@ import { Hotel } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import ReservationHotel from "@/components/ReservationHotel";
 import AssistantDeco from "@/components/AssistantDeco";
+import { imageOptimisee } from "@/lib/imageOptimisee";
 
 export default function ChambreDetailPage({ params }: { params: Promise<{ id: string; chambreId: string }> }) {
   const { id: hotelId, chambreId } = use(params);
@@ -42,7 +43,7 @@ export default function ChambreDetailPage({ params }: { params: Promise<{ id: st
         <div className="lg:col-span-2">
           <div className="mb-3 aspect-video overflow-hidden rounded-xl bg-slate-800">
             {chambre.photos.length > 0 ? (
-              <img src={chambre.photos[photoActive]} alt={chambre.nom} className="h-full w-full object-cover" />
+              <img src={imageOptimisee(chambre.photos[photoActive], 1200)} alt={chambre.nom} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center text-slate-500">{t("aucune_photo")}</div>
             )}
@@ -56,7 +57,7 @@ export default function ChambreDetailPage({ params }: { params: Promise<{ id: st
                   onClick={() => setPhotoActive(i)}
                   className={i === photoActive ? "h-16 w-24 overflow-hidden rounded-lg border-2 border-blue-500" : "h-16 w-24 overflow-hidden rounded-lg border-2 border-transparent"}
                 >
-                  <img src={photo} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                  <img src={imageOptimisee(photo, 256)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                 </button>
               ))}
             </div>

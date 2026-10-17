@@ -32,6 +32,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <head>
+        {/* Ouvre la connexion a Supabase des le debut (connexion, reservations) : evite ~0,5 s plus tard. */}
+        {process.env.NEXT_PUBLIC_SUPABASE_URL && (
+          <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="" />
+        )}
+      </head>
       <body className="h-full">
         <SplashScreen />
         <AuthProvider>

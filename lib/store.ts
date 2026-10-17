@@ -3,6 +3,18 @@ import { Maison, Hotel, Salle, ParametresSite, Societe, Immeuble, Panorama360, E
 import { ExtraChoisi } from "./prix";
 import { messageErreurBase } from "./erreurs";
 
+// Apres une modification dans l'admin : vide le cache des pages publiques (app/api/revalider)
+// pour que les visiteurs voient le changement tout de suite. Sans effet cote serveur.
+function rafraichirSitePublic() {
+  if (typeof window === "undefined") return;
+  supabase.auth
+    .getSession()
+    .then(({ data }) =>
+      fetch("/api/revalider", { method: "POST", headers: { Authorization: "Bearer " + (data.session?.access_token || "") } })
+    )
+    .catch(() => {});
+}
+
 function maisonVersDb(m: Maison) {
   return {
     id: m.id,
@@ -76,12 +88,14 @@ export async function getMaisonParId(id: string): Promise<Maison | undefined> {
 export async function sauvegarderMaison(maison: Maison) {
   const { error } = await supabase.from("maisons").upsert(maisonVersDb(maison));
   if (error) throw new Error(messageErreurBase(error, "la maison"));
+  rafraichirSitePublic();
 }
 
 export async function supprimerMaison(id: string) {
   const { data, error } = await supabase.from("maisons").delete().eq("id", id).select("id");
   if (error) throw new Error(messageErreurBase(error, "la maison").replace("d'enregistrer", "de supprimer"));
   if (!data || data.length === 0) throw new Error("Suppression refusee : votre compte n'a pas la permission de supprimer cet element, ou il n'existe plus.");
+  rafraichirSitePublic();
 }
 
 export async function getMaisonsParImmeuble(immeubleId: string): Promise<Maison[]> {
@@ -159,12 +173,14 @@ export async function getHotelParId(id: string): Promise<Hotel | undefined> {
 export async function sauvegarderHotel(hotel: Hotel) {
   const { error } = await supabase.from("hotels").upsert(hotelVersDb(hotel));
   if (error) throw new Error(messageErreurBase(error, "l'hotel"));
+  rafraichirSitePublic();
 }
 
 export async function supprimerHotel(id: string) {
   const { data, error } = await supabase.from("hotels").delete().eq("id", id).select("id");
   if (error) throw new Error(messageErreurBase(error, "l'hotel").replace("d'enregistrer", "de supprimer"));
   if (!data || data.length === 0) throw new Error("Suppression refusee : votre compte n'a pas la permission de supprimer cet element, ou il n'existe plus.");
+  rafraichirSitePublic();
 }
 
 function salleVersDb(s: Salle) {
@@ -238,12 +254,14 @@ export async function getSalleParId(id: string): Promise<Salle | undefined> {
 export async function sauvegarderSalle(salle: Salle) {
   const { error } = await supabase.from("salles").upsert(salleVersDb(salle));
   if (error) throw new Error(messageErreurBase(error, "la salle"));
+  rafraichirSitePublic();
 }
 
 export async function supprimerSalle(id: string) {
   const { data, error } = await supabase.from("salles").delete().eq("id", id).select("id");
   if (error) throw new Error(messageErreurBase(error, "la salle").replace("d'enregistrer", "de supprimer"));
   if (!data || data.length === 0) throw new Error("Suppression refusee : votre compte n'a pas la permission de supprimer cet element, ou il n'existe plus.");
+  rafraichirSitePublic();
 }
 
 export async function getSocietes(): Promise<Societe[]> {
@@ -267,10 +285,12 @@ export async function sauvegarderSociete(societe: Societe) {
     logo_url: societe.logoUrl, whatsapp: societe.whatsapp, telephone: societe.telephone,
   });
   if (error) throw new Error(messageErreurBase(error, "la societe"));
+  rafraichirSitePublic();
 }
 
 export async function supprimerSociete(id: string) {
   await supabase.from("societes").delete().eq("id", id);
+  rafraichirSitePublic();
 }
 
 export async function getImmeubles(): Promise<Immeuble[]> {
@@ -311,10 +331,12 @@ export async function sauvegarderImmeuble(immeuble: Immeuble) {
     photos: immeuble.photos,
   });
   if (error) throw new Error(messageErreurBase(error, "l'immeuble"));
+  rafraichirSitePublic();
 }
 
 export async function supprimerImmeuble(id: string) {
   await supabase.from("immeubles").delete().eq("id", id);
+  rafraichirSitePublic();
 }
 
 const parametresParDefaut: ParametresSite = {
@@ -386,6 +408,7 @@ export async function sauvegarderParametres(parametres: ParametresSite) {
     couleur_bouton_salles: parametres.couleurBoutonSalles,
   });
   if (error) throw new Error(messageErreurBase(error, "les parametres"));
+  rafraichirSitePublic();
 }
 
 export interface MessageContact {
@@ -627,12 +650,14 @@ export async function getChambreParId(id: string): Promise<ChambreHotel | undefi
 export async function sauvegarderChambre(chambre: ChambreHotel) {
   const { error } = await supabase.from("chambres").upsert(chambreVersDb(chambre));
   if (error) throw new Error(messageErreurBase(error, "la chambre"));
+  rafraichirSitePublic();
 }
 
 export async function supprimerChambre(id: string) {
   const { data, error } = await supabase.from("chambres").delete().eq("id", id).select("id");
   if (error) throw new Error(messageErreurBase(error, "la chambre").replace("d'enregistrer", "de supprimer"));
   if (!data || data.length === 0) throw new Error("Suppression refusee : votre compte n'a pas la permission de supprimer cet element, ou il n'existe plus.");
+  rafraichirSitePublic();
 }
 
 export interface HotelPartenaireApi {

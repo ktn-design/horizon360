@@ -24,7 +24,7 @@ export default function EditeurVisite360({ panoramas, onChange }: EditeurVisite3
 
     setEnCours(true);
     try {
-      const url = await uploaderPhoto(fichier);
+      const url = await uploaderPhoto(fichier, { panorama: true });
       const nouveauPanorama: Panorama360 = {
         id: Date.now().toString(),
         nom,

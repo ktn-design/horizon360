@@ -7,6 +7,7 @@ import { ParametresSite, Hotel } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import Diaporama from "@/components/Diaporama";
 import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
+import { imageOptimisee } from "@/lib/imageOptimisee";
 
 export default function HotelsPage() {
   const { t } = useLanguage();
@@ -75,7 +76,7 @@ export default function HotelsPage() {
 
   const styleFond = parametres?.imageHotelsUrl
     ? {
-        backgroundImage: `linear-gradient(rgba(15,23,42,0.85), rgba(15,23,42,0.95)), url(${parametres.imageHotelsUrl})`,
+        backgroundImage: `linear-gradient(rgba(15,23,42,0.85), rgba(15,23,42,0.95)), url(${imageOptimisee(parametres.imageHotelsUrl, 1200)})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundAttachment: "fixed",
@@ -169,7 +170,7 @@ export default function HotelsPage() {
           >
             <div className="aspect-video w-full overflow-hidden bg-slate-700">
               {hotel.photos.length > 0 ? (
-                <img src={hotel.photos[0]} alt={hotel.titre} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                <img src={imageOptimisee(hotel.photos[0], 640)} alt={hotel.titre} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full items-center justify-center text-slate-500 text-sm">{t("aucune_photo")}</div>
               )}

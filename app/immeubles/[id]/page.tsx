@@ -6,6 +6,7 @@ import { getImmeubleParId, getMaisonsParImmeuble } from "@/lib/store";
 import { notFound } from "next/navigation";
 import { Immeuble, Maison } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
+import { imageOptimisee } from "@/lib/imageOptimisee";
 
 export default function ImmeubleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -34,7 +35,7 @@ export default function ImmeubleDetailPage({ params }: { params: Promise<{ id: s
       </Link>
 
       {immeuble.photos.length > 0 && (
-        <img src={immeuble.photos[0]} alt="" className="mb-6 h-64 w-full rounded-xl object-cover" />
+        <img src={imageOptimisee(immeuble.photos[0], 1200)} alt="" className="mb-6 h-64 w-full rounded-xl object-cover" />
       )}
 
       <h1 className="mb-2 text-3xl font-bold">{immeuble.nom}</h1>

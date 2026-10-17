@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getToutesLesChambres, getHotels, ChambreHotel, TypeLit } from "@/lib/store";
 import { Hotel } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
+import { imageOptimisee } from "@/lib/imageOptimisee";
 
 interface ResultatChambre {
   chambre: ChambreHotel;
@@ -132,7 +133,7 @@ export default function ChambresPage() {
           >
             <div className="aspect-video w-full overflow-hidden bg-slate-700">
               {chambre.photos.length > 0 ? (
-                <img src={chambre.photos[0]} alt={chambre.nom} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                <img src={imageOptimisee(chambre.photos[0], 640)} alt={chambre.nom} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-slate-500">{t("aucune_photo")}</div>
               )}
