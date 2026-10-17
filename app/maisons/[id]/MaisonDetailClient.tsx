@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Maison } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import AssistantDeco from "@/components/AssistantDeco";
+import VisionneuseMaquette3D from "@/components/VisionneuseMaquette3D";
 import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
 import { imageOptimisee } from "@/lib/imageOptimisee";
 
@@ -51,6 +52,8 @@ export default function MaisonDetailClient({ maison }: { maison: Maison }) {
               {t("fiche_visite_virtuelle")}
             </Link>
           )}
+
+          {maison.maquette3dUrl && <VisionneuseMaquette3D url={maison.maquette3dUrl} titre={maison.titre} />}
 
           <h1 className="mt-8 text-3xl font-bold">{maison.titre}</h1>
           <p className="mt-1 text-slate-300">

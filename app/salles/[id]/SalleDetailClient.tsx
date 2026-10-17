@@ -6,6 +6,7 @@ import { Salle, TypeEvenement } from "@/types";
 import { useLanguage } from "@/lib/LanguageContext";
 import ReservationSalle from "@/components/ReservationSalle";
 import AssistantDeco from "@/components/AssistantDeco";
+import VisionneuseMaquette3D from "@/components/VisionneuseMaquette3D";
 import { useEnregistrerVisite } from "@/lib/useEnregistrerVisite";
 import { imageOptimisee } from "@/lib/imageOptimisee";
 
@@ -63,6 +64,8 @@ export default function SalleDetailClient({ salle }: { salle: Salle }) {
               {t("fiche_visite_virtuelle")}
             </Link>
           )}
+
+          {salle.maquette3dUrl && <VisionneuseMaquette3D url={salle.maquette3dUrl} titre={salle.titre} />}
 
           <h1 className="mt-8 text-3xl font-bold">{salle.titre}</h1>
           <p className="mt-1 text-slate-300">

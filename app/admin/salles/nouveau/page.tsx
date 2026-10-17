@@ -8,6 +8,7 @@ import SelectPays from "@/components/SelectPays";
 import { Extra, Salle, TypeEvenement } from "@/types";
 import EditeurExtras from "@/components/EditeurExtras";
 import { texteErreur } from "@/lib/erreurs";
+import EditeurMaquette3D from "@/components/EditeurMaquette3D";
 
 const evenementsListe: { valeur: TypeEvenement; label: string }[] = [
   { valeur: "mariage", label: "Mariage" },
@@ -22,6 +23,7 @@ const evenementsListe: { valeur: TypeEvenement; label: string }[] = [
 export default function NouvelleSallePage() {
   const router = useRouter();
   const [photos, setPhotos] = useState<string[]>([]);
+  const [maquette3dUrl, setMaquette3dUrl] = useState<string | undefined>(undefined);
   const [extras, setExtras] = useState<Extra[]>([]);
   const [evenements, setEvenements] = useState<TypeEvenement[]>([]);
   const [enCours, setEnCours] = useState(false);
@@ -83,6 +85,7 @@ export default function NouvelleSallePage() {
     e.preventDefault();
 
     const nouvelleSalle: Salle = {
+      maquette3dUrl,
       id: Date.now().toString(),
       titre: form.titre,
       description: form.description,
@@ -221,6 +224,8 @@ export default function NouvelleSallePage() {
             <input required value={form.telephone} onChange={(e) => champ("telephone", e.target.value)} className="input" />
           </Champ>
         </div>
+
+        <EditeurMaquette3D url={maquette3dUrl} onChange={setMaquette3dUrl} />
 
         <button type="submit" className="rounded-lg bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-700">
           Enregistrer la salle

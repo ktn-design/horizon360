@@ -6,12 +6,14 @@ import { getMaisonParId, sauvegarderMaison, supprimerMaison } from "@/lib/store"
 import { uploaderPhoto } from "@/lib/imageUtils";
 import { Maison } from "@/types";
 import { texteErreur } from "@/lib/erreurs";
+import EditeurMaquette3D from "@/components/EditeurMaquette3D";
 
 export default function ModifierMaisonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [charge, setCharge] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [maquette3dUrl, setMaquette3dUrl] = useState<string | undefined>(undefined);
   const [enCours, setEnCours] = useState(false);
   const [maisonExistante, setMaisonExistante] = useState<Maison | null>(null);
 
@@ -68,6 +70,7 @@ export default function ModifierMaisonPage({ params }: { params: Promise<{ id: s
           telephone: maison.contact.telephone,
         });
         setPhotos(maison.photos || []);
+        setMaquette3dUrl(maison.maquette3dUrl);
       }
       setCharge(true);
     }
@@ -106,6 +109,7 @@ export default function ModifierMaisonPage({ params }: { params: Promise<{ id: s
     e.preventDefault();
 
     const maisonMaj: Maison = {
+      maquette3dUrl,
       id,
       titre: form.titre,
       description: form.description,
@@ -259,6 +263,8 @@ export default function ModifierMaisonPage({ params }: { params: Promise<{ id: s
             <input required value={form.telephone} onChange={(e) => champ("telephone", e.target.value)} className="input" />
           </Champ>
         </div>
+
+        <EditeurMaquette3D url={maquette3dUrl} onChange={setMaquette3dUrl} />
 
         <div className="flex gap-4">
           <button type="submit" className="rounded-lg bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-700">

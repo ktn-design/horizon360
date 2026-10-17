@@ -210,6 +210,9 @@ export default function SallesClient({ salles, parametres }: { salles: Salle[]; 
                 {t("fiche_visite_virtuelle")}
               </span>
             )}
+            {salle.maquette3dUrl && (
+              <span className="ml-2 mt-3 inline-block rounded-full bg-purple-600 px-3 py-1 text-xs">{t("maquette_badge")}</span>
+            )}
           </Link>
         ))}
       </div>

@@ -202,6 +202,9 @@ export default function MaisonsClient({ maisons, parametres }: { maisons: Maison
                   {t("fiche_visite_virtuelle")}
                 </span>
               )}
+              {maison.maquette3dUrl && (
+                <span className="ml-2 mt-3 inline-block rounded-full bg-purple-600 px-3 py-1 text-xs">{t("maquette_badge")}</span>
+              )}
             </div>
           </Link>
         ))}

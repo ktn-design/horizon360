@@ -56,6 +56,8 @@ export interface Maison {
   photos: string[];
   panorama360Url?: string;
   panoramas?: Panorama360[];
+  // Maquette 3D (fichier .glb) que le client fait tourner ; facultative.
+  maquette3dUrl?: string;
   contact: {
     whatsapp: string;
     telephone: string;
@@ -108,6 +110,8 @@ export interface Salle {
   photos: string[];
   panorama360Url?: string;
   panoramas?: Panorama360[];
+  // Maquette 3D (fichier .glb) que le client fait tourner ; facultative.
+  maquette3dUrl?: string;
   extras?: Extra[];
   contact: {
     whatsapp: string;

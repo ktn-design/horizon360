@@ -71,3 +71,34 @@ export async function uploaderPhoto(fichierOriginal: File, options?: { panorama?
   const { data } = supabase.storage.from("photos").getPublicUrl(nomFichier);
   return data.publicUrl;
 }
+
+// Maquette 3D : fichier .glb (export « glTF binaire » de SketchUp, Blender, Revit...).
+export const POIDS_MAX_MAQUETTE = 50 * 1024 * 1024;
+export const POIDS_CONSEILLE_MAQUETTE = 20 * 1024 * 1024;
+
+export async function uploaderMaquette3D(fichier: File): Promise<string> {
+  if (!/\.glb$/i.test(fichier.name)) {
+    throw new Error("Fichier « " + fichier.name + " » refuse : la maquette doit etre au format .glb (glTF binaire). Demandez cet export a votre architecte.");
+  }
+  if (fichier.size > POIDS_MAX_MAQUETTE) {
+    throw new Error(
+      "Maquette trop lourde (" + Math.round(fichier.size / 1024 / 1024) + " Mo, maximum 50 Mo). " +
+      "Demandez une version allegee (textures reduites, compression Draco) : moins de 20 Mo pour un chargement rapide sur telephone."
+    );
+  }
+
+  const nomFichier = Date.now() + "-" + Math.random().toString(36).slice(2) + ".glb";
+  const { error } = await supabase.storage.from("maquettes").upload(nomFichier, fichier, {
+    contentType: "model/gltf-binary",
+    cacheControl: "31536000",
+  });
+  if (error) {
+    if (/bucket not found/i.test(error.message)) {
+      throw new Error("L'espace de stockage « maquettes » n'existe pas encore : appliquez le script supabase/migrations/20261017_maquettes_3d.sql dans Supabase > SQL Editor.");
+    }
+    throw new Error(messageErreurPhoto(error as { message: string; statusCode?: string }, fichier.name).replace("Photo", "Maquette"));
+  }
+
+  const { data } = supabase.storage.from("maquettes").getPublicUrl(nomFichier);
+  return data.publicUrl;
+}

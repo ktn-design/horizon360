@@ -15,6 +15,13 @@ function rafraichirSitePublic() {
     .catch(() => {});
 }
 
+// Colonne maquette_3d_url envoyee seulement si la fiche en a une (ou si elle vient d'etre
+// retiree : chaine vide) : tant que la migration 20261017_maquettes_3d.sql n'est pas
+// appliquee, les maisons et salles sans maquette s'enregistrent normalement.
+function colonneMaquette3d(url: string | undefined): { maquette_3d_url?: string | null } {
+  return url === undefined ? {} : { maquette_3d_url: url || null };
+}
+
 function maisonVersDb(m: Maison) {
   return {
     id: m.id,
@@ -41,6 +48,7 @@ function maisonVersDb(m: Maison) {
     photos: m.photos,
     panorama_360_url: m.panorama360Url || null,
     panoramas: m.panoramas || [],
+    ...colonneMaquette3d(m.maquette3dUrl),
     whatsapp: m.contact.whatsapp,
     telephone: m.contact.telephone,
   };
@@ -69,6 +77,7 @@ function dbVersMaison(d: any): Maison {
     photos: d.photos || [],
     panorama360Url: d.panorama_360_url || undefined,
     panoramas: d.panoramas || [],
+    maquette3dUrl: d.maquette_3d_url ?? undefined,
     contact: { whatsapp: d.whatsapp, telephone: d.telephone },
   };
 }
@@ -207,6 +216,7 @@ function salleVersDb(s: Salle) {
     photos: s.photos,
     panorama_360_url: s.panorama360Url || null,
     panoramas: s.panoramas || [],
+    ...colonneMaquette3d(s.maquette3dUrl),
     extras: s.extras || [],
     whatsapp: s.contact.whatsapp,
     telephone: s.contact.telephone,
@@ -234,6 +244,7 @@ function dbVersSalle(d: any): Salle {
     photos: d.photos || [],
     panorama360Url: d.panorama_360_url || undefined,
     panoramas: d.panoramas || [],
+    maquette3dUrl: d.maquette_3d_url ?? undefined,
     extras: d.extras || [],
     contact: { whatsapp: d.whatsapp, telephone: d.telephone },
   };

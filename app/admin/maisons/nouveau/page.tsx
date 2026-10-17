@@ -7,10 +7,12 @@ import { uploaderPhoto } from "@/lib/imageUtils";
 import SelectPays from "@/components/SelectPays";
 import { Maison, Immeuble } from "@/types";
 import { texteErreur } from "@/lib/erreurs";
+import EditeurMaquette3D from "@/components/EditeurMaquette3D";
 
 export default function NouvelleMaisonPage() {
   const router = useRouter();
   const [photos, setPhotos] = useState<string[]>([]);
+  const [maquette3dUrl, setMaquette3dUrl] = useState<string | undefined>(undefined);
   const [enCours, setEnCours] = useState(false);
   const [immeubleId, setImmeubleId] = useState("");
   const [immeubles, setImmeubles] = useState<Immeuble[]>([]);
@@ -79,6 +81,7 @@ export default function NouvelleMaisonPage() {
     e.preventDefault();
 
     const nouvelleMaison: Maison = {
+      maquette3dUrl,
       id: Date.now().toString(),
       titre: form.titre,
       description: form.description,
@@ -222,6 +225,8 @@ export default function NouvelleMaisonPage() {
             <input required value={form.telephone} onChange={(e) => champ("telephone", e.target.value)} className="input" placeholder="+15145550123" />
           </Champ>
         </div>
+
+        <EditeurMaquette3D url={maquette3dUrl} onChange={setMaquette3dUrl} />
 
         <button type="submit" className="rounded-lg bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-700">
           Enregistrer la maison
