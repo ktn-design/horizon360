@@ -1,16 +1,27 @@
 // Visite 360 dans un casque de realite virtuelle (Meta Quest, Pico...) via WebXR.
-// Charge uniquement sur les appareils compatibles (voir vrDisponible dans VisiteVirtuelle).
+// Charge uniquement sur les appareils compatibles (voir VisiteVirtuelle).
 //
 // - Chaque piece est une sphere autour du visiteur. Image « stereo haut/bas » : l'oeil gauche
 //   voit la moitie du haut, l'oeil droit celle du bas, d'ou le relief.
-// - Les reperes vers les autres pieces flottent dans l'espace : on les vise avec la manette
+// - Echelle : une photo 360 classique (Insta360...) n'a pas de relief, les deux yeux voient donc
+//   l'image a la distance de la sphere. Une grande sphere donne des pieces gigantesques : on la
+//   place a une distance de piece (~3 m), reglable dans le casque (« Taille - / + »).
+// - La sphere suit la position de la tete (seule la rotation compte, comme dans les lecteurs
+//   360 professionnels) : pas de deformation quand on bouge un peu la tete.
+// - Les reperes vers les autres pieces flottent devant les murs : on les vise avec la manette
 //   (ou la main) et on appuie sur la gachette (ou on pince les doigts) pour changer de piece.
 import * as THREE from "three";
 import { Panorama360 } from "@/types";
 
-const RAYON = 50;
-const DISTANCE_REPERE = 6;
+// Distance des murs pour une photo classique (metres) : valeur de depart, bornes du reglage.
+const RAYON_MONO_DEFAUT = 3;
+const RAYON_MONO_MIN = 1.5;
+const RAYON_MONO_MAX = 15;
+// Image stereo : le relief est deja dans l'image, la sphere peut etre lointaine.
+const RAYON_STEREO = 20;
+const CLE_REGLAGE = "h360_vr_rayon";
 const COULEUR_SURVOL = new THREE.Color("#93c5fd");
+const BLANC = new THREE.Color(0xffffff);
 
 interface OptionsVisiteVR {
   panoramas: Panorama360[];
@@ -24,9 +35,9 @@ function direction(yaw: number, pitch: number): THREE.Vector3 {
   return new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
 }
 
-// Sphere vue de l'interieur. moitie : "haut" / "bas" pour une image stereo, null sinon.
+// Sphere de rayon 1 vue de l'interieur (agrandie ensuite). moitie : "haut" / "bas" pour une image stereo.
 function creerSphere(moitie: "haut" | "bas" | null): THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial> {
-  const geometrie = new THREE.SphereGeometry(RAYON, 96, 48);
+  const geometrie = new THREE.SphereGeometry(1, 96, 48);
   geometrie.scale(-1, 1, 1);
   if (moitie) {
     const uv = geometrie.attributes.uv;
@@ -66,9 +77,26 @@ function creerEtiquette(titre: string, sousTitre: string, fond: string): THREE.S
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true }));
-  sprite.scale.set(2, 0.8, 1);
   sprite.renderOrder = 10;
   return sprite;
+}
+
+// Place une etiquette a une distance donnee, en gardant la meme taille apparente
+// (largeur « angulaire » : 1/3 de la distance pour un repere, 1/4 pour un bouton).
+function placer(sprite: THREE.Sprite, dir: THREE.Vector3, distance: number, largeurRelative: number) {
+  sprite.position.copy(dir).multiplyScalar(distance);
+  sprite.userData.largeur = distance * largeurRelative;
+  sprite.scale.set(sprite.userData.largeur, sprite.userData.largeur * 0.4, 1);
+}
+
+function lireReglage(): number {
+  try {
+    const valeur = Number(localStorage.getItem(CLE_REGLAGE));
+    if (valeur >= RAYON_MONO_MIN && valeur <= RAYON_MONO_MAX) return valeur;
+  } catch {
+    // stockage indisponible : valeur par defaut
+  }
+  return RAYON_MONO_DEFAUT;
 }
 
 export async function vrDisponible(): Promise<boolean> {
@@ -96,6 +124,10 @@ export async function lancerVisiteVR({ panoramas, urlDepart, onChangementPiece }
   scene.background = new THREE.Color("#0f172a");
   const camera = new THREE.PerspectiveCamera(75, 1, 0.05, 200);
 
+  // Tout ce qui entoure le visiteur suit la position de sa tete (voir boucle d'affichage).
+  const monde = new THREE.Group();
+  scene.add(monde);
+
   // Image classique : une sphere vue par les deux yeux. Image stereo : une sphere par oeil
   // (calques 1 et 2, que three.js reserve a l'oeil gauche et a l'oeil droit).
   const sphereMono = creerSphere(null);
@@ -103,16 +135,55 @@ export async function lancerVisiteVR({ panoramas, urlDepart, onChangementPiece }
   const sphereDroite = creerSphere("bas");
   sphereGauche.layers.set(1);
   sphereDroite.layers.set(2);
-  scene.add(sphereMono, sphereGauche, sphereDroite);
+  sphereGauche.scale.setScalar(RAYON_STEREO);
+  sphereDroite.scale.setScalar(RAYON_STEREO);
+  monde.add(sphereMono, sphereGauche, sphereDroite);
 
   const reperes = new THREE.Group();
-  scene.add(reperes);
+  monde.add(reperes);
 
+  // Boutons, en regardant vers le bas : Taille -  |  Quitter la VR  |  Taille +
   const boutonQuitter = creerEtiquette("Quitter la VR", "", "rgba(220,38,38,0.85)");
-  boutonQuitter.position.copy(direction(0, -0.9).multiplyScalar(4));
-  boutonQuitter.scale.set(1.4, 0.56, 1);
-  boutonQuitter.userData.quitter = true;
-  scene.add(boutonQuitter);
+  const boutonPlusPetit = creerEtiquette("Taille -", "", "rgba(15,23,42,0.85)");
+  const boutonPlusGrand = creerEtiquette("Taille +", "", "rgba(15,23,42,0.85)");
+  boutonQuitter.userData.action = "quitter";
+  boutonPlusPetit.userData.action = "plus_petit";
+  boutonPlusGrand.userData.action = "plus_grand";
+  const boutons = [boutonPlusPetit, boutonQuitter, boutonPlusGrand];
+  monde.add(...boutons);
+
+  let rayonMono = lireReglage();
+  let stereo = false;
+  let pieceActuelle: Panorama360 | undefined;
+
+  // Distance des reperes : un peu devant les murs (photo classique), ou a 3 m (stereo).
+  function distanceReperes() {
+    return stereo ? 3 : Math.max(1.2, rayonMono * 0.85);
+  }
+
+  function disposer() {
+    sphereMono.scale.setScalar(rayonMono);
+    const d = distanceReperes();
+    for (const etiquette of reperes.children as THREE.Sprite[]) {
+      placer(etiquette, direction(etiquette.userData.yaw, etiquette.userData.pitch), d, 1 / 3);
+    }
+    const dBoutons = Math.min(1.6, d);
+    placer(boutonPlusPetit, direction(-0.42, -0.85), dBoutons, 1 / 4);
+    placer(boutonQuitter, direction(0, -0.85), dBoutons, 1 / 4);
+    placer(boutonPlusGrand, direction(0.42, -0.85), dBoutons, 1 / 4);
+    // Le reglage de taille ne sert qu'aux photos classiques.
+    boutonPlusPetit.visible = boutonPlusGrand.visible = !stereo;
+  }
+
+  function changerTaille(facteur: number) {
+    rayonMono = Math.min(RAYON_MONO_MAX, Math.max(RAYON_MONO_MIN, rayonMono * facteur));
+    try {
+      localStorage.setItem(CLE_REGLAGE, String(rayonMono));
+    } catch {
+      // reglage non memorise : sans consequence
+    }
+    disposer();
+  }
 
   const chargeur = new THREE.TextureLoader();
   chargeur.setCrossOrigin("anonymous");
@@ -120,17 +191,16 @@ export async function lancerVisiteVR({ panoramas, urlDepart, onChangementPiece }
   let chargementEnCours = "";
 
   async function afficherPiece(url: string) {
-    const panorama = panoramas.find((p) => p.url === url);
     chargementEnCours = url;
-    reperes.clear();
     const texture = await chargeur.loadAsync(url);
     if (chargementEnCours !== url) {
       texture.dispose();
       return;
     }
+    pieceActuelle = panoramas.find((p) => p.url === url);
+    stereo = !!pieceActuelle?.stereo;
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    const stereo = !!panorama?.stereo;
     sphereMono.material.map = stereo ? null : texture;
     sphereGauche.material.map = stereo ? texture : null;
     sphereDroite.material.map = stereo ? texture : null;
@@ -141,13 +211,20 @@ export async function lancerVisiteVR({ panoramas, urlDepart, onChangementPiece }
     textureActuelle?.dispose();
     textureActuelle = texture;
 
-    for (const hotspot of panorama?.hotspots || []) {
+    for (const ancien of reperes.children as THREE.Sprite[]) {
+      ancien.material.map?.dispose();
+      ancien.material.dispose();
+    }
+    reperes.clear();
+    for (const hotspot of pieceActuelle?.hotspots || []) {
       const cible = panoramas.find((p) => p.url === hotspot.panoramaCible);
       const etiquette = creerEtiquette(cible?.nom || hotspot.label, "Vers", "rgba(15,23,42,0.75)");
-      etiquette.position.copy(direction(hotspot.yaw, hotspot.pitch).multiplyScalar(DISTANCE_REPERE));
       etiquette.userData.cible = hotspot.panoramaCible;
+      etiquette.userData.yaw = hotspot.yaw;
+      etiquette.userData.pitch = hotspot.pitch;
       reperes.add(etiquette);
     }
+    disposer();
     onChangementPiece(url);
   }
 
@@ -159,38 +236,52 @@ export async function lancerVisiteVR({ panoramas, urlDepart, onChangementPiece }
       new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]),
       new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 })
     );
-    rayon.scale.z = 8;
+    rayon.scale.z = 5;
     manette.add(rayon);
     manette.addEventListener("select", () => {
       const vise = objetVise(manette);
       if (!vise) return;
-      if (vise.userData.quitter) session.end();
+      const action = vise.userData.action;
+      if (action === "quitter") session.end();
+      else if (action === "plus_petit") changerTaille(1 / 1.2);
+      else if (action === "plus_grand") changerTaille(1.2);
       else if (vise.userData.cible) afficherPiece(vise.userData.cible).catch(() => {});
     });
     scene.add(manette);
     return manette;
   });
 
+  function cliquables(): THREE.Object3D[] {
+    return [...reperes.children, ...boutons.filter((b) => b.visible)];
+  }
+
   function objetVise(manette: THREE.XRTargetRaySpace): THREE.Object3D | null {
     raycaster.setFromXRController(manette);
     raycaster.camera = renderer.xr.getCamera();
-    const touches = raycaster.intersectObjects([...reperes.children, boutonQuitter], false);
+    const touches = raycaster.intersectObjects(cliquables(), false);
     return touches[0]?.object || null;
   }
 
+  const positionTete = new THREE.Vector3();
   renderer.setAnimationLoop(() => {
+    // La piece reste centree sur la tete du visiteur.
+    renderer.xr.getCamera().getWorldPosition(positionTete);
+    monde.position.copy(positionTete);
+    monde.updateMatrixWorld();
+
     // Survol : l'etiquette visee grossit et se teinte.
     const vises = new Set(manettes.map((m) => objetVise(m)).filter(Boolean));
-    for (const objet of [...reperes.children, boutonQuitter] as THREE.Sprite[]) {
+    for (const objet of cliquables() as THREE.Sprite[]) {
       const survole = vises.has(objet);
-      objet.material.color.copy(survole ? COULEUR_SURVOL : new THREE.Color(0xffffff));
-      const base = objet.userData.quitter ? 1.4 : 2;
-      objet.scale.set(base * (survole ? 1.15 : 1), base * 0.4 * (survole ? 1.15 : 1), 1);
+      objet.material.color.copy(survole ? COULEUR_SURVOL : BLANC);
+      const largeur = (objet.userData.largeur || 1) * (survole ? 1.15 : 1);
+      objet.scale.set(largeur, largeur * 0.4, 1);
     }
     renderer.render(scene, camera);
   });
 
   await renderer.xr.setSession(session);
+  disposer();
   afficherPiece(urlDepart).catch(() => {});
 
   await new Promise<void>((resolve) => session.addEventListener("end", () => resolve(), { once: true }));
